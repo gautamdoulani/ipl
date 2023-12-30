@@ -1,0 +1,52 @@
+[0m01:29:08.583723 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'start', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x108747690>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x10878bc50>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x10878bbd0>]}
+
+
+============================== 01:29:08.586239 | f07ac9c8-d204-4283-aca3-b2a2a6869a01 ==============================
+[0m01:29:08.586239 [info ] [MainThread]: Running with dbt=1.7.4
+[0m01:29:08.586557 [debug] [MainThread]: running dbt with arguments {'printer_width': '80', 'indirect_selection': 'eager', 'write_json': 'True', 'log_cache_events': 'False', 'partial_parse': 'True', 'cache_selected_only': 'False', 'warn_error': 'None', 'version_check': 'True', 'profiles_dir': '/Users/gautam_doulani/.dbt', 'log_path': 'logs', 'fail_fast': 'False', 'debug': 'False', 'use_colors': 'True', 'use_experimental_parser': 'False', 'no_print': 'None', 'quiet': 'False', 'warn_error_options': 'WarnErrorOptions(include=[], exclude=[])', 'invocation_command': 'dbt init', 'static_parser': 'True', 'log_format': 'default', 'target_path': 'None', 'introspect': 'True', 'send_anonymous_usage_stats': 'True'}
+[0m01:29:12.413674 [debug] [MainThread]: Starter project path: /opt/homebrew/Caskroom/miniconda/base/lib/python3.11/site-packages/dbt/include/starter_project
+[0m01:29:12.426219 [info ] [MainThread]: 
+Your new dbt project "dbt_ipl" was created!
+
+For more information on how to configure the profiles.yml file,
+please consult the dbt documentation here:
+
+  https://docs.getdbt.com/docs/configure-your-profile
+
+One more thing:
+
+Need help? Don't hesitate to reach out to us via GitHub issues or on Slack:
+
+  https://community.getdbt.com/
+
+Happy modeling!
+
+[0m01:29:12.426499 [info ] [MainThread]: Setting up your profile.
+[0m01:29:21.411521 [error] [MainThread]: Encountered an error:
+
+[0m01:29:21.415486 [error] [MainThread]: Traceback (most recent call last):
+  File "/opt/homebrew/Caskroom/miniconda/base/lib/python3.11/site-packages/dbt/cli/requires.py", line 90, in wrapper
+    result, success = func(*args, **kwargs)
+                      ^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Caskroom/miniconda/base/lib/python3.11/site-packages/dbt/cli/requires.py", line 75, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Caskroom/miniconda/base/lib/python3.11/site-packages/dbt/cli/main.py", line 515, in init
+    results = task.run()
+              ^^^^^^^^^^
+  File "/opt/homebrew/Caskroom/miniconda/base/lib/python3.11/site-packages/dbt/task/init.py", line 344, in run
+    self.setup_profile(profile_name)
+  File "/opt/homebrew/Caskroom/miniconda/base/lib/python3.11/site-packages/dbt/task/init.py", line 250, in setup_profile
+    if not self.check_if_can_write_profile(profile_name=profile_name):
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Caskroom/miniconda/base/lib/python3.11/site-packages/dbt/task/init.py", line 213, in check_if_can_write_profile
+    response = click.confirm(
+               ^^^^^^^^^^^^^^
+  File "/opt/homebrew/Caskroom/miniconda/base/lib/python3.11/site-packages/click/termui.py", line 235, in confirm
+    raise Abort() from None
+click.exceptions.Abort
+
+[0m01:29:21.420333 [debug] [MainThread]: Resource report: {"command_name": "init", "command_wall_clock_time": 12.868095, "process_user_time": 0.843594, "process_kernel_time": 0.172678, "process_mem_max_rss": "110788608", "command_success": false, "process_in_blocks": "0", "process_out_blocks": "0"}
+[0m01:29:21.421427 [debug] [MainThread]: Command `dbt init` failed at 01:29:21.421235 after 12.87 seconds
+[0m01:29:21.422023 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'end', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x10878ba50>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x1087a6c90>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x108783f90>]}
+[0m01:29:21.422666 [debug] [MainThread]: Flushing usage events
