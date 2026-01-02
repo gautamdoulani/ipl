@@ -232,11 +232,11 @@ if page == "Overview":
         ORDER BY titles DESC, latest_win ASC
     """)
 
-    # Display as columns with team logos and trophy emoji
-    cols = st.columns(min(len(trophy_count), 6))
+    # Display as columns with team logos and trophy emoji - evenly distributed
+    num_teams = len(trophy_count)
+    cols = st.columns(num_teams)
     for i, (idx, row) in enumerate(trophy_count.iterrows()):
-        col_idx = i % 6
-        with cols[col_idx]:
+        with cols[i]:
             display_team_logo(row['team'], size=80)
             trophies = "🏆" * row['titles']
             st.markdown(f"**{row['team']}**")
@@ -327,6 +327,11 @@ if page == "Overview":
     """)
 
     if len(team_season_perf) > 0:
+        # Get championship winners for gold outline
+        champions = set()
+        for idx, row in winners.iterrows():
+            champions.add((row['Champion'], row['Season']))
+
         # Get team order by total matches
         team_order = team_season_perf.groupby('team')['total_matches'].first().sort_values(ascending=False).index.tolist()
 
@@ -335,36 +340,53 @@ if page == "Overview":
         # Reorder rows by total matches played
         matrix = matrix.reindex(team_order)
 
-        # Style function to color cells based on win percentage
-        def style_matrix(val):
-            if val == -1:
-                return 'background-color: #f0f0f0; color: #999'
-            elif val >= 60:
-                return 'background-color: #28a745; color: white'
-            elif val >= 50:
-                return 'background-color: #90EE90; color: black'
-            elif val >= 40:
-                return 'background-color: #FFD700; color: black'
-            else:
-                return 'background-color: #FF6B6B; color: white'
-
-        # Style function for team names (row index)
-        def style_team_row(row):
+        # Style function to color cells based on win percentage and championship
+        def style_matrix_with_champions(row):
             team = row.name
-            color = TEAM_COLORS.get(team, '#666666')
-            return [f'background-color: {color}; color: white; font-weight: bold'] + [''] * len(row)
+            styles = []
+            for season in row.index:
+                val = matrix.loc[team, season]  # Get original numeric value
+                # Base style based on win percentage
+                if val == -1:
+                    style = 'background-color: #f0f0f0; color: #999'
+                elif val >= 60:
+                    style = 'background-color: #28a745; color: white'
+                elif val >= 50:
+                    style = 'background-color: #90EE90; color: black'
+                elif val >= 40:
+                    style = 'background-color: #FFD700; color: black'
+                else:
+                    style = 'background-color: #FF6B6B; color: white'
 
-        # Format values for display
-        display_matrix = matrix.copy()
-        display_matrix = display_matrix.apply(lambda x: x.apply(lambda v: f"{int(v)}%" if v != -1 else '-'))
+                # Add gold outline if team won championship that season
+                if (team, season) in champions:
+                    style += '; outline: 3px solid #FFD700; outline-offset: -3px'
 
-        # Apply styling
-        styled = matrix.style.applymap(style_matrix)
+                styles.append(style)
+            return styles
+
+        # Custom formatter that includes trophy
+        def format_cell(v, team, season):
+            if v == -1:
+                return '-'
+            if (team, season) in champions:
+                return f"🏆{int(v)}%"
+            return f"{int(v)}%"
+
+        # Create formatted matrix with trophy emoji
+        formatted = matrix.copy().astype(object)
+        for team in formatted.index:
+            for season in formatted.columns:
+                formatted.loc[team, season] = format_cell(matrix.loc[team, season], team, season)
+
         # Calculate height to show all rows (approx 35px per row + header)
         table_height = (len(matrix) + 1) * 35 + 10
-        st.dataframe(styled.format(lambda v: f"{int(v)}%" if v != -1 else '-'), use_container_width=True, height=table_height)
 
-        st.caption("🟢 60%+ | 🟡 50-59% | 🟠 40-49% | 🔴 <40%")
+        # Apply styling and display
+        styled_formatted = formatted.style.apply(style_matrix_with_champions, axis=1)
+        st.dataframe(styled_formatted, use_container_width=True, height=table_height)
+
+        st.caption("🟢 60%+ | 🟡 50-59% | 🟠 40-49% | 🔴 <40% | 🏆 = Championship winner")
 
 # Player Stats page - combines Batting and Bowling
 elif page == "Player Stats":
