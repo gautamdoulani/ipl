@@ -116,7 +116,7 @@ if selected_player:
             with col4:
                 st.metric("4s / 6s", f"{int(stats['fours'])} / {int(stats['sixes'])}")
 
-            st.markdown("---")
+            st.divider()
 
             # Top 10 bowlers faced
             st.subheader("Most Faced Bowlers")
@@ -148,7 +148,7 @@ if selected_player:
                 SELECT
                     match_id,
                     SUM(total_runs) as runs_conceded,
-                    COUNT(*) as balls,
+                    COUNT(CASE WHEN extras_type IS NULL OR (extras_type NOT LIKE '%wides%' AND extras_type NOT LIKE '%noballs%') THEN 1 END) as balls,
                     SUM(CASE WHEN is_wicket AND wicket_kind NOT IN ('run out', 'retired hurt', 'retired out', 'obstructing the field') THEN 1 ELSE 0 END) as wickets
                 FROM stg_deliveries
                 WHERE bowler = '{selected_player}'
@@ -201,7 +201,7 @@ if selected_player:
             with col4:
                 st.metric("4W / 5W", f"{int(stats['four_wickets'])} / {int(stats['five_wickets'])}")
 
-            st.markdown("---")
+            st.divider()
 
             # Top 10 batsmen bowled to
             st.subheader("Most Bowled To Batsmen")

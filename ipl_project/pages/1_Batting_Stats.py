@@ -26,7 +26,7 @@ else:
     season_filter = ""
     st.caption("Showing data for: All Seasons")
 
-st.markdown("---")
+st.divider()
 
 # Top Run Scorers Section
 st.subheader("Top Run Scorers")
@@ -101,7 +101,7 @@ if len(batting) > 0:
 else:
     st.info("No players match the criteria")
 
-st.markdown("---")
+st.divider()
 
 # Best Strike Rates Section
 st.subheader("Best Strike Rates")
@@ -138,7 +138,7 @@ if len(strike_rates) > 0:
 else:
     st.info("No players match the criteria")
 
-st.markdown("---")
+st.divider()
 
 # Best Averages Section
 st.subheader("Best Batting Averages")

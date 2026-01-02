@@ -80,6 +80,8 @@ with st.expander("🔎 Explore Tables", expanded=False):
         sample_df = run_query(f"SELECT * FROM {selected_table} LIMIT 5")
         st.dataframe(sample_df, use_container_width=True, hide_index=True)
 
+st.divider()
+
 st.markdown("""
 **Available Tables:**
 

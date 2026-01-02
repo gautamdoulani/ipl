@@ -78,7 +78,7 @@ if selected_match:
     """)
 
     # Match Header with team scores
-    st.markdown("---")
+    st.divider()
     header_cols = st.columns([2, 1, 2])
 
     team1_data = innings_totals[innings_totals['innings'] == 1].iloc[0] if len(innings_totals) > 0 else None
@@ -134,7 +134,7 @@ if selected_match:
     with col4:
         st.caption(f"**Player of Match:** {match_info['player_of_match'].iloc[0] or 'N/A'}")
 
-    st.markdown("---")
+    st.divider()
 
     # Innings scorecards
     for innings in [1, 2]:
@@ -229,7 +229,7 @@ if selected_match:
                 overs_inn_str = f"{legal_balls_inn // 6}.{legal_balls_inn % 6}"
                 st.markdown(f"**Total:** {int(inn_total['total'])}/{int(inn_total['wickets'])} ({overs_inn_str} overs)")
 
-                st.markdown("---")
+                st.divider()
 
                 # BOWLING SCORECARD
                 st.markdown("##### Bowling")

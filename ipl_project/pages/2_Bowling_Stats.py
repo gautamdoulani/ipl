@@ -26,7 +26,7 @@ else:
     season_filter = ""
     st.caption("Showing data for: All Seasons")
 
-st.markdown("---")
+st.divider()
 
 # Top Wicket Takers Section
 st.subheader("Top Wicket Takers")
@@ -43,7 +43,7 @@ bowling = run_query(f"""
             d.bowler,
             d.bowler_cricinfo_id,
             SUM(d.total_runs) as runs_conceded,
-            COUNT(*) as balls_bowled,
+            COUNT(CASE WHEN d.extras_type IS NULL OR (d.extras_type NOT LIKE '%wides%' AND d.extras_type NOT LIKE '%noballs%') THEN 1 END) as balls_bowled,
             SUM(CASE
                 WHEN d.is_wicket AND d.wicket_kind NOT IN ('run out', 'retired hurt', 'retired out', 'obstructing the field')
                 THEN 1 ELSE 0
@@ -105,7 +105,7 @@ if len(bowling) > 0:
 else:
     st.info("No players match the criteria")
 
-st.markdown("---")
+st.divider()
 
 # Most Wicket Hauls Section
 st.subheader("Most Wicket Hauls")
@@ -146,7 +146,7 @@ if len(wicket_hauls) > 0:
 else:
     st.info("No wicket hauls found for selected seasons")
 
-st.markdown("---")
+st.divider()
 
 # Best Economy Rates Section
 st.subheader("Best Economy Rates")
@@ -187,7 +187,7 @@ if len(economy) > 0:
 else:
     st.info("No players match the criteria")
 
-st.markdown("---")
+st.divider()
 
 # Best Bowling Averages Section
 st.subheader("Best Bowling Averages")
@@ -227,7 +227,7 @@ if len(bowl_avg) > 0:
 else:
     st.info("No players match the criteria")
 
-st.markdown("---")
+st.divider()
 
 # Best Bowling Strike Rates Section
 st.subheader("Best Bowling Strike Rates")

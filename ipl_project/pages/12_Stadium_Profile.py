@@ -159,10 +159,10 @@ if selected_venue:
             SELECT
                 d.bowler,
                 COUNT(DISTINCT d.match_id) as matches,
-                COUNT(CASE WHEN d.extras_type IS NULL OR d.extras_type NOT IN ('wides', 'noballs') THEN 1 END) as balls,
+                COUNT(CASE WHEN d.extras_type IS NULL OR (d.extras_type NOT LIKE '%wides%' AND d.extras_type NOT LIKE '%noballs%') THEN 1 END) as balls,
                 SUM(d.total_runs) as runs,
                 SUM(CASE WHEN d.is_wicket AND d.wicket_kind NOT IN ('run out', 'retired hurt', 'retired out', 'obstructing the field') THEN 1 ELSE 0 END) as wickets,
-                ROUND(SUM(d.total_runs) * 6.0 / NULLIF(COUNT(CASE WHEN d.extras_type IS NULL OR d.extras_type NOT IN ('wides', 'noballs') THEN 1 END), 0), 2) as economy,
+                ROUND(SUM(d.total_runs) * 6.0 / NULLIF(COUNT(CASE WHEN d.extras_type IS NULL OR (d.extras_type NOT LIKE '%wides%' AND d.extras_type NOT LIKE '%noballs%') THEN 1 END), 0), 2) as economy,
                 ROUND(SUM(d.total_runs) * 1.0 / NULLIF(SUM(CASE WHEN d.is_wicket AND d.wicket_kind NOT IN ('run out', 'retired hurt', 'retired out', 'obstructing the field') THEN 1 ELSE 0 END), 0), 2) as average
             FROM stg_deliveries d
             JOIN stg_matches m ON d.match_id = m.match_id

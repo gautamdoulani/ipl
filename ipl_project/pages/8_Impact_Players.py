@@ -139,7 +139,7 @@ for i, (_, row) in enumerate(top5_impact.iterrows()):
         st.markdown(f"**{row['player']}**")
         st.caption(f"{int(row['times_used'])} times")
 
-st.markdown("---")
+st.divider()
 
 # Full table
 most_used_in = run_query("""
@@ -180,7 +180,7 @@ for i, (_, row) in enumerate(top5_replaced.iterrows()):
         st.markdown(f"**{row['player']}**")
         st.caption(f"{int(row['times_replaced'])} times")
 
-st.markdown("---")
+st.divider()
 
 most_replaced = run_query("""
     SELECT

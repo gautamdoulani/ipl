@@ -1,7 +1,6 @@
 """IPL Data Explorer - Player vs Player (Batter vs Bowler) comparison."""
 
 import streamlit as st
-import pandas as pd
 from utils import run_query, display_player_image
 
 
@@ -34,7 +33,7 @@ if player1 and player2:
             SUM(batter_runs) as runs_scored,
             SUM(CASE WHEN batter_runs = 4 THEN 1 ELSE 0 END) as fours,
             SUM(CASE WHEN batter_runs = 6 THEN 1 ELSE 0 END) as sixes,
-            SUM(CASE WHEN batter_runs = 0 AND (extras_type IS NULL OR extras_type NOT IN ('wides', 'noballs')) THEN 1 ELSE 0 END) as dot_balls,
+            SUM(CASE WHEN batter_runs = 0 AND (extras_type IS NULL OR (extras_type NOT LIKE '%wides%' AND extras_type NOT LIKE '%noballs%')) THEN 1 ELSE 0 END) as dot_balls,
             SUM(CASE WHEN is_wicket AND wicket_player_out = batter THEN 1 ELSE 0 END) as dismissals,
             COUNT(DISTINCT match_id) as matches
         FROM stg_deliveries

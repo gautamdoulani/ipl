@@ -1,11 +1,13 @@
 """Shared utilities for IPL Explorer app."""
 
-import streamlit as st
+import base64
+import os
+from pathlib import Path
+
 import duckdb
 import pandas as pd
-from pathlib import Path
-import os
 import requests
+import streamlit as st
 
 # Database connection - use writable path for Streamlit Cloud
 DB_PATH = Path(__file__).parent / "ipl.duckdb"
@@ -67,7 +69,6 @@ def display_team_logo(team_name, size=80):
     """Display team logo with proper sizing using HTML/CSS to prevent distortion."""
     logo_path = get_team_logo_path(team_name)
     if logo_path:
-        import base64
         with open(logo_path, "rb") as f:
             data = base64.b64encode(f.read()).decode()
         st.markdown(
@@ -96,7 +97,6 @@ def check_image_exists(url):
 
 def display_player_image(photo_url, cricinfo_id, size=100):
     """Display player image with consistent sizing using HTML/CSS."""
-    import base64
     show_placeholder = True
 
     if photo_url and pd.notna(cricinfo_id):
@@ -130,26 +130,3 @@ def display_player_cards(df, name_col, stat_col, stat_label, limit=5):
             else:
                 st.metric(stat_label, val)
 
-def setup_page(title="IPL Data Explorer", icon="🏏"):
-    """Common page setup."""
-    st.set_page_config(
-        page_title=title,
-        page_icon=icon,
-        layout="wide"
-    )
-    # Custom CSS for consistent image sizing
-    st.markdown("""
-    <style>
-    /* Fix for st.image to have consistent sizing */
-    [data-testid="stImage"] {
-        display: flex;
-        justify-content: center;
-    }
-    [data-testid="stImage"] img {
-        width: 100px !important;
-        height: 100px !important;
-        object-fit: cover;
-        border-radius: 8px;
-    }
-    </style>
-    """, unsafe_allow_html=True)
