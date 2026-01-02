@@ -16,7 +16,12 @@
       "Bash(python3:*)",
       "Bash(unzip:*)",
       "Bash(dbt run)",
-      "Bash(timeout 5 streamlit run:*)"
+      "Bash(timeout 5 streamlit run:*)",
+      "Bash(git stash:*)",
+      "Bash(cat:*)",
+      "Bash(git checkout:*)",
+      "Bash(ls:*)",
+      "Bash(grep:*)"
     ]
   }
 }
