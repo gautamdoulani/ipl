@@ -8,16 +8,16 @@ from utils import run_query, display_player_image
 st.title("⚔️ Player vs Player")
 st.caption("Batter vs Bowler matchups")
 
-# Get list of batters and bowlers
+# Get list of batters and bowlers (ordered by balls faced/bowled)
 batters = run_query("""
-    SELECT DISTINCT batter FROM batting_metrics
+    SELECT batter FROM batting_metrics
     WHERE total_runs >= 100
-    ORDER BY batter
+    ORDER BY total_balls DESC
 """)
 bowlers = run_query("""
-    SELECT DISTINCT bowler FROM bowling_metrics
+    SELECT bowler FROM bowling_metrics
     WHERE total_wickets >= 10
-    ORDER BY bowler
+    ORDER BY total_balls DESC
 """)
 
 col1, col2 = st.columns(2)

@@ -21,7 +21,9 @@
       "Bash(cat:*)",
       "Bash(git checkout:*)",
       "Bash(ls:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(dbt run:*)",
+      "Bash(pkill:*)"
     ]
   }
 }

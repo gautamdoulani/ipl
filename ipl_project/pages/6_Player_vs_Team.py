@@ -12,16 +12,17 @@ col1, col2 = st.columns(2)
 
 with col1:
     players_t = run_query("""
-        SELECT DISTINCT batter FROM batting_metrics
+        SELECT batter FROM batting_metrics
         WHERE total_runs >= 100
-        ORDER BY batter
+        ORDER BY matches DESC
     """)
     selected_player_t = st.selectbox("Select Player", players_t['batter'].tolist())
 
 with col2:
     teams_t = run_query("""
-        SELECT DISTINCT REPLACE(REPLACE(team, 'Royal Challengers Bangalore', 'Royal Challengers Bengaluru'), 'Rising Pune Supergiants', 'Rising Pune Supergiant') as team
-        FROM team_metrics ORDER BY team
+        SELECT REPLACE(REPLACE(team, 'Royal Challengers Bangalore', 'Royal Challengers Bengaluru'), 'Rising Pune Supergiants', 'Rising Pune Supergiant') as team
+        FROM team_metrics
+        ORDER BY matches_played DESC
     """)
     selected_team_t = st.selectbox("Select Opposition Team", teams_t['team'].tolist())
 
@@ -32,16 +33,19 @@ if selected_player_t and selected_team_t:
         WHERE b.batter = '{selected_player_t}'
     """)
 
-    col1, col2 = st.columns([1, 3])
+    col1, col2, col3 = st.columns([2, 1, 2])
     with col1:
         cricinfo_id = player_info['cricinfo_id'].iloc[0] if len(player_info) > 0 else None
         photo_url = f"https://a.espncdn.com/i/headshots/cricket/players/full/{int(cricinfo_id)}.png" if pd.notna(cricinfo_id) else None
         display_player_image(photo_url, cricinfo_id, size=100)
+        st.markdown(f"**{selected_player_t}**")
 
     with col2:
-        st.markdown(f"### {selected_player_t}")
-        display_team_logo(selected_team_t, size=50)
-        st.caption(f"vs {selected_team_t}")
+        st.markdown("<div style='display:flex; align-items:center; justify-content:center; height:100px; font-size:24px;'>vs</div>", unsafe_allow_html=True)
+
+    with col3:
+        display_team_logo(selected_team_t, size=100)
+        st.markdown(f"**{selected_team_t}**")
 
     st.divider()
 

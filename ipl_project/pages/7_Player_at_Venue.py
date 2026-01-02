@@ -5,26 +5,38 @@ import pandas as pd
 from utils import run_query, display_player_image
 
 
+@st.cache_data
+def get_players_for_venue():
+    return run_query("""
+        SELECT batter FROM batting_metrics
+        WHERE total_runs >= 100
+        ORDER BY matches DESC
+    """)
+
+@st.cache_data
+def get_venues():
+    return run_query("""
+        SELECT venue, COUNT(*) as match_count
+        FROM stg_matches
+        WHERE venue IS NOT NULL
+        GROUP BY venue
+        ORDER BY match_count DESC
+    """)
+
+
 st.title("🏟️ Player at Venue")
 st.caption("How a player performs at different stadiums")
 
 col1, col2 = st.columns(2)
 
+players_v = get_players_for_venue()
+venues = get_venues()
+
 with col1:
-    players_v = run_query("""
-        SELECT DISTINCT batter FROM batting_metrics
-        WHERE total_runs >= 100
-        ORDER BY batter
-    """)
-    selected_player_v = st.selectbox("Select Player", players_v['batter'].tolist())
+    selected_player_v = st.selectbox("Select Player", players_v['batter'].tolist(), key="venue_player")
 
 with col2:
-    venues = run_query("""
-        SELECT DISTINCT venue FROM stg_matches
-        WHERE venue IS NOT NULL
-        ORDER BY venue
-    """)
-    selected_venue = st.selectbox("Select Venue", venues['venue'].tolist())
+    selected_venue = st.selectbox("Select Venue", venues['venue'].tolist(), key="venue_select")
 
 if selected_player_v and selected_venue:
     player_info = run_query(f"""
@@ -33,15 +45,25 @@ if selected_player_v and selected_venue:
         WHERE b.batter = '{selected_player_v}'
     """)
 
-    col1, col2 = st.columns([1, 3])
+    col1, col2, col3 = st.columns([2, 1, 2])
     with col1:
         cricinfo_id = player_info['cricinfo_id'].iloc[0] if len(player_info) > 0 else None
         photo_url = f"https://a.espncdn.com/i/headshots/cricket/players/full/{int(cricinfo_id)}.png" if pd.notna(cricinfo_id) else None
+        st.markdown("<div style='text-align:center;'>", unsafe_allow_html=True)
         display_player_image(photo_url, cricinfo_id, size=100)
+        st.markdown(f"<p style='text-align:center; font-weight:bold; margin-top:8px;'>{selected_player_v}</p>", unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
 
     with col2:
-        st.markdown(f"### {selected_player_v}")
-        st.caption(f"at {selected_venue}")
+        st.markdown("<div style='display:flex; align-items:center; justify-content:center; height:130px; font-size:24px;'>at</div>", unsafe_allow_html=True)
+
+    with col3:
+        st.markdown(f"""
+            <div style='text-align:center;'>
+                <div style='font-size:64px; line-height:100px;'>🏟️</div>
+                <p style='font-weight:bold; margin-top:8px;'>{selected_venue}</p>
+            </div>
+        """, unsafe_allow_html=True)
 
     st.divider()
 

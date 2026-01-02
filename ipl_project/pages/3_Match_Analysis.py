@@ -24,7 +24,7 @@ st.title("📊 Match Scorecard")
 
 # Season and match selection from staging model
 seasons = run_query("SELECT DISTINCT season FROM stg_matches WHERE season IS NOT NULL ORDER BY season DESC")
-season_list = seasons['season'].tolist()
+season_list = [str(s) for s in seasons['season'].tolist()]
 
 # Pre-select season if coming from query params
 default_season_idx = 0
@@ -43,7 +43,7 @@ matches = run_query(f"""
     ORDER BY match_date DESC
 """)
 
-match_options = dict(zip(matches['match_id'], matches['match_name'] + ' (' + matches['match_date'].astype(str) + ')'))
+match_options = dict(zip(matches['match_id'].astype(int), matches['match_name'] + ' (' + matches['match_date'].astype(str) + ')'))
 match_list = list(match_options.keys())
 
 # Pre-select match if coming from query params
@@ -70,8 +70,7 @@ if selected_match:
             REPLACE(REPLACE(batting_team, 'Royal Challengers Bangalore', 'Royal Challengers Bengaluru'), 'Rising Pune Supergiants', 'Rising Pune Supergiant') as batting_team,
             SUM(total_runs) as total,
             SUM(CASE WHEN is_wicket THEN 1 ELSE 0 END) as wickets,
-            MAX(over_number) as overs,
-            MAX(ball_number) as last_ball
+            SUM(CASE WHEN extras_type IS NULL OR (extras_type NOT LIKE '%wides%' AND extras_type NOT LIKE '%noballs%') THEN 1 ELSE 0 END) as legal_balls
         FROM stg_deliveries
         WHERE match_id = '{selected_match}'
         GROUP BY innings, REPLACE(REPLACE(batting_team, 'Royal Challengers Bangalore', 'Royal Challengers Bengaluru'), 'Rising Pune Supergiants', 'Rising Pune Supergiant')
@@ -89,7 +88,8 @@ if selected_match:
         if team1_data is not None:
             display_team_logo(team1_data['batting_team'], size=60)
             st.markdown(f"### {team1_data['batting_team']}")
-            overs_str = f"{int(team1_data['overs'])}.{int(team1_data['last_ball'])}"
+            legal_balls = int(team1_data['legal_balls'])
+            overs_str = f"{legal_balls // 6}.{legal_balls % 6}"
             st.markdown(f"## {int(team1_data['total'])}/{int(team1_data['wickets'])}")
             st.caption(f"({overs_str} overs)")
 
@@ -100,7 +100,8 @@ if selected_match:
         if team2_data is not None:
             display_team_logo(team2_data['batting_team'], size=60)
             st.markdown(f"### {team2_data['batting_team']}")
-            overs_str = f"{int(team2_data['overs'])}.{int(team2_data['last_ball'])}"
+            legal_balls = int(team2_data['legal_balls'])
+            overs_str = f"{legal_balls // 6}.{legal_balls % 6}"
             st.markdown(f"## {int(team2_data['total'])}/{int(team2_data['wickets'])}")
             st.caption(f"({overs_str} overs)")
 
@@ -224,7 +225,9 @@ if selected_match:
                     st.markdown(f"**Extras:** {int(e['total_extras'])} ({', '.join(extras_parts) if extras_parts else '0'})")
 
                 # Total
-                st.markdown(f"**Total:** {int(inn_total['total'])}/{int(inn_total['wickets'])} ({int(inn_total['overs'])}.{int(inn_total['last_ball'])} overs)")
+                legal_balls_inn = int(inn_total['legal_balls'])
+                overs_inn_str = f"{legal_balls_inn // 6}.{legal_balls_inn % 6}"
+                st.markdown(f"**Total:** {int(inn_total['total'])}/{int(inn_total['wickets'])} ({overs_inn_str} overs)")
 
                 st.markdown("---")
 
@@ -234,12 +237,13 @@ if selected_match:
                 bowling = run_query(f"""
                     SELECT
                         bowler as Bowler,
-                        COUNT(*) as balls,
-                        FLOOR(COUNT(*) / 6) || '.' || (COUNT(*) % 6) as O,
+                        SUM(CASE WHEN extras_type IS NULL OR (extras_type NOT LIKE '%wides%' AND extras_type NOT LIKE '%noballs%') THEN 1 ELSE 0 END) as legal_balls,
+                        CAST(FLOOR(SUM(CASE WHEN extras_type IS NULL OR (extras_type NOT LIKE '%wides%' AND extras_type NOT LIKE '%noballs%') THEN 1 ELSE 0 END) / 6) AS INTEGER) || '.' ||
+                            (SUM(CASE WHEN extras_type IS NULL OR (extras_type NOT LIKE '%wides%' AND extras_type NOT LIKE '%noballs%') THEN 1 ELSE 0 END) % 6) as O,
                         SUM(CASE WHEN total_runs = 0 AND extras_type IS NULL THEN 1 ELSE 0 END) as M,
                         SUM(total_runs) as R,
                         SUM(CASE WHEN is_wicket AND wicket_kind NOT IN ('run out', 'retired hurt', 'retired out', 'obstructing the field') THEN 1 ELSE 0 END) as W,
-                        ROUND(SUM(total_runs) * 6.0 / NULLIF(COUNT(*), 0), 2) as Econ
+                        ROUND(SUM(total_runs) * 6.0 / NULLIF(SUM(CASE WHEN extras_type IS NULL OR (extras_type NOT LIKE '%wides%' AND extras_type NOT LIKE '%noballs%') THEN 1 ELSE 0 END), 0), 2) as Econ
                     FROM stg_deliveries
                     WHERE match_id = '{selected_match}' AND innings = {innings}
                     GROUP BY bowler
@@ -255,15 +259,22 @@ if selected_match:
 
                 # Fall of wickets
                 fow = run_query(f"""
+                    WITH legal_balls_numbered AS (
+                        SELECT *,
+                            SUM(CASE WHEN extras_type IS NULL OR (extras_type NOT LIKE '%wides%' AND extras_type NOT LIKE '%noballs%') THEN 1 ELSE 0 END)
+                                OVER (ORDER BY over_number, ball_number) as cumulative_legal_balls
+                        FROM stg_deliveries
+                        WHERE match_id = '{selected_match}' AND innings = {innings}
+                    )
                     SELECT
                         wicket_player_out as player,
                         (SELECT SUM(total_runs) FROM stg_deliveries d2
-                         WHERE d2.match_id = d.match_id AND d2.innings = d.innings
+                         WHERE d2.match_id = '{selected_match}' AND d2.innings = {innings}
                          AND (d2.over_number < d.over_number OR (d2.over_number = d.over_number AND d2.ball_number <= d.ball_number))) as score,
-                        over_number || '.' || ball_number as over_ball,
+                        CAST(FLOOR((cumulative_legal_balls - 1) / 6) AS INTEGER) || '.' || ((cumulative_legal_balls - 1) % 6 + 1) as over_ball,
                         ROW_NUMBER() OVER (ORDER BY over_number, ball_number) as wicket_num
-                    FROM stg_deliveries d
-                    WHERE match_id = '{selected_match}' AND innings = {innings} AND is_wicket
+                    FROM legal_balls_numbered d
+                    WHERE is_wicket
                     ORDER BY over_number, ball_number
                 """)
 

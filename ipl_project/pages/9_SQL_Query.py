@@ -6,19 +6,92 @@ from utils import run_query
 
 st.title("🔍 SQL Query Editor")
 
-st.markdown("""
-**Available Tables (dbt Semantic Layer):**
-- `batting_metrics` - Aggregated batting stats (avg, SR, 50s, 100s)
-- `bowling_metrics` - Aggregated bowling stats (avg, economy, SR)
-- `team_metrics` - Team-level statistics
-- `stg_matches` - Staging matches data
-- `stg_deliveries` - Staging deliveries data
-- `metricflow_time_spine` - Time dimension table
+# Table Relationships Diagram
+with st.expander("📊 Table Relationships", expanded=False):
+    st.markdown("""
+    ```
+    ┌───────────────────────────────────────────────────────────────────┐
+    │                      TABLE RELATIONSHIPS                          │
+    ├───────────────────────────────────────────────────────────────────┤
+    │                                                                   │
+    │  ┌──────────────┐         ┌────────────────┐                     │
+    │  │  stg_matches │◀────────│ stg_deliveries │                     │
+    │  └──────────────┘         └────────────────┘                     │
+    │   (match_id,               (match_id,                            │
+    │    venue, teams,            batter, bowler,                      │
+    │    winner, date)            runs, wickets)                       │
+    │         │                        │                               │
+    │         │                        ├──────────▶┌────────────────┐  │
+    │         │                        │           │ batting_metrics│  │
+    │         │                        │           └────────────────┘  │
+    │         │                        │           (batter, runs,      │
+    │         │                        │            avg, SR, 50s)      │
+    │         │                        │                               │
+    │         │                        ├──────────▶┌────────────────┐  │
+    │         │                        │           │ bowling_metrics│  │
+    │         │                        │           └────────────────┘  │
+    │         │                        │           (bowler, wickets,   │
+    │         │                        │            avg, economy)      │
+    │         │                        │                               │
+    │         │                        └──────────▶┌────────────────┐  │
+    │         │                                    │  team_metrics  │  │
+    │         │                                    └────────────────┘  │
+    │         │                                    (team, wins, win%)  │
+    │         │                                                        │
+    │         └───────────────────────▶┌────────────────┐              │
+    │                                  │ impact_players │              │
+    │                                  └────────────────┘              │
+    │                                  (match_id, player_in,           │
+    │                                   player_out)                    │
+    │                                                                  │
+    │  ┌──────────┐                                                    │
+    │  │  people  │◀─── JOIN on batter/bowler name for player photos   │
+    │  └──────────┘                                                    │
+    │  (name, key_cricinfo)                                            │
+    │                                                                  │
+    └───────────────────────────────────────────────────────────────────┘
+    ```
 
-**Raw Tables:**
-- `matches` - Raw match data
-- `deliveries` - Raw ball-by-ball data
-- `people` - Player registry
+    **Key Joins:**
+    - `stg_deliveries.match_id` = `stg_matches.match_id`
+    - `stg_deliveries.batter` = `people.name` (for player photos via key_cricinfo)
+    - `batting_metrics.batter` = `bowling_metrics.bowler` (for all-rounders)
+    - `impact_players.match_id` = `stg_matches.match_id`
+    """)
+
+# Table Explorer
+with st.expander("🔎 Explore Tables", expanded=False):
+    tables = [
+        "batting_metrics", "bowling_metrics", "team_metrics",
+        "stg_matches", "stg_deliveries", "people", "impact_players"
+    ]
+
+    selected_table = st.selectbox("Select Table", tables)
+
+    if selected_table:
+        # Show columns
+        st.markdown(f"**Columns in `{selected_table}`:**")
+        cols_df = run_query(f"DESCRIBE {selected_table}")
+        cols_df = cols_df[['column_name', 'column_type', 'null']]
+        st.dataframe(cols_df, use_container_width=True, hide_index=True)
+
+        # Show sample data
+        st.markdown(f"**Sample Data (5 rows):**")
+        sample_df = run_query(f"SELECT * FROM {selected_table} LIMIT 5")
+        st.dataframe(sample_df, use_container_width=True, hide_index=True)
+
+st.markdown("""
+**Available Tables:**
+
+| Table | Description |
+|-------|-------------|
+| `batting_metrics` | Aggregated batting stats (runs, avg, SR, 50s, 100s) |
+| `bowling_metrics` | Aggregated bowling stats (wickets, avg, economy, SR) |
+| `team_metrics` | Team-level statistics (matches, wins, win %) |
+| `stg_matches` | Match details (date, venue, teams, winner) |
+| `stg_deliveries` | Ball-by-ball data (runs, wickets, extras) |
+| `people` | Player registry (name, cricinfo_id for photos) |
+| `impact_players` | Impact player substitutions (2023+) |
 """)
 
 # Sample queries using semantic layer

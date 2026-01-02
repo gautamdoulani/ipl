@@ -56,7 +56,7 @@ select
     ba.matches,
     ba.innings,
     ba.total_balls,
-    floor(ba.total_balls / 6) || '.' || (ba.total_balls % 6) as overs,
+    cast(floor(ba.total_balls / 6) as integer) || '.' || (ba.total_balls % 6) as overs,
     ba.total_runs_conceded,
     ba.total_wickets,
     ba.total_dot_balls,
