@@ -1,15 +1,50 @@
-Welcome to your new dbt project!
+# IPL Data Explorer
 
-### Using the starter project
+A Streamlit app for exploring Indian Premier League (IPL) cricket data from 2008-2025.
 
-Try running the following commands:
-- dbt run
-- dbt test
+## Features
 
+- **Overview** - Season summaries, top performers, and key statistics
+- **Batting Stats** - Comprehensive batting leaderboards with filters
+- **Bowling Stats** - Bowling performance analysis and rankings
+- **Player Profile** - Deep dive into individual player careers
+- **Match Analysis** - Detailed match scorecards and ball-by-ball breakdowns
+- **Stadium Profile** - Venue statistics and records
+- **Team vs Team** - Head-to-head team comparisons
+- **Player vs Player** - Compare two players side by side
+- **Player vs Team** - How a player performs against specific teams
+- **Player at Venue** - Player performance at different stadiums
+- **Impact Players** - Analysis of the IPL Impact Player rule
+- **SQL Query** - Run custom SQL queries on the data
 
-### Resources:
-- Learn more about dbt [in the docs](https://docs.getdbt.com/docs/introduction)
-- Check out [Discourse](https://discourse.getdbt.com/) for commonly asked questions and answers
-- Join the [chat](https://community.getdbt.com/) on Slack for live discussions and support
-- Find [dbt events](https://events.getdbt.com) near you
-- Check out [the blog](https://blog.getdbt.com/) for the latest news on dbt's development and best practices
+## Data
+
+- **1,169 matches** from 2008 to 2025
+- **278,205 ball-by-ball deliveries**
+- Source: [Cricsheet](https://cricsheet.org/)
+
+## Tech Stack
+
+- **[Streamlit](https://streamlit.io/)** - Web application framework
+- **[DuckDB](https://duckdb.org/)** - In-process analytical database
+- **[Pandas](https://pandas.pydata.org/)** - Data manipulation
+
+## Local Development
+
+1. Clone the repository
+2. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+3. Run the app:
+   ```bash
+   streamlit run app.py
+   ```
+
+## Deployment
+
+This app is ready for deployment on [Streamlit Cloud](https://streamlit.io/cloud).
+
+## License
+
+This is a fan-made application for educational and entertainment purposes. It is not affiliated with the IPL, BCCI, or any IPL franchise.
