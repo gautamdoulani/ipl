@@ -7,7 +7,9 @@
       "Bash(pip install:*)",
       "Bash(lsof:*)",
       "Bash(git remote set-url:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nAdd IPL data explorer Streamlit app\n\n- Fresh dbt project with DuckDB adapter\n- Load IPL cricket data from cricsheet.org (1,169 matches, 278K deliveries)\n- Streamlit app with batting/bowling stats, match analysis, head-to-head, SQL editor\n- Ready for Streamlit Cloud deployment\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git push:*)"
     ]
   }
 }

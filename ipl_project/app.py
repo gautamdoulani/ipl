@@ -33,11 +33,28 @@ def run_query(query: str) -> pd.DataFrame:
     conn = get_connection()
     return conn.execute(query).fetchdf()
 
+def get_player_photo_url(cricinfo_id):
+    """Generate ESPN photo URL from cricinfo ID."""
+    if cricinfo_id and pd.notna(cricinfo_id):
+        return f"https://a.espncdn.com/i/headshots/cricket/players/full/{int(cricinfo_id)}.png"
+    return None
+
+def display_player_cards(df, name_col, stat_col, stat_label, limit=5):
+    """Display player cards with photos."""
+    cols = st.columns(limit)
+    for i, (idx, row) in enumerate(df.head(limit).iterrows()):
+        with cols[i]:
+            photo_url = row.get('photo_url')
+            if photo_url:
+                st.image(photo_url, width=100)
+            st.markdown(f"**{row[name_col]}**")
+            st.metric(stat_label, f"{row[stat_col]:,}" if isinstance(row[stat_col], (int, float)) else row[stat_col])
+
 # Sidebar navigation
 st.sidebar.title("🏏 IPL Explorer")
 page = st.sidebar.radio(
     "Navigate",
-    ["Overview", "Batting Stats", "Bowling Stats", "Match Analysis", "Head to Head", "SQL Query"]
+    ["Overview", "IPL Winners", "Batting Stats", "Bowling Stats", "Match Analysis", "Head to Head", "SQL Query"]
 )
 
 # Overview page
@@ -95,14 +112,107 @@ if page == "Overview":
     with col2:
         st.subheader("Top Player of Match Awards")
         pom = run_query("""
-            SELECT player_of_match as player, COUNT(*) as awards
-            FROM matches
-            WHERE player_of_match IS NOT NULL
-            GROUP BY player_of_match
+            SELECT m.player_of_match as player,
+                   'https://a.espncdn.com/i/headshots/cricket/players/full/' || p.key_cricinfo || '.png' as photo_url,
+                   COUNT(*) as awards
+            FROM matches m
+            LEFT JOIN people p ON m.player_of_match = p.name
+            WHERE m.player_of_match IS NOT NULL
+            GROUP BY m.player_of_match, p.key_cricinfo
             ORDER BY awards DESC
             LIMIT 10
         """)
-        st.dataframe(pom, use_container_width=True, hide_index=True)
+        st.dataframe(pom[['player', 'awards']], use_container_width=True, hide_index=True)
+
+    # Top 5 award winners with photos
+    st.subheader("Most Decorated Players")
+    top_pom = run_query("""
+        SELECT m.player_of_match as player,
+               'https://a.espncdn.com/i/headshots/cricket/players/full/' || p.key_cricinfo || '.png' as photo_url,
+               COUNT(*) as awards
+        FROM matches m
+        LEFT JOIN people p ON m.player_of_match = p.name
+        WHERE m.player_of_match IS NOT NULL
+        GROUP BY m.player_of_match, p.key_cricinfo
+        ORDER BY awards DESC
+        LIMIT 5
+    """)
+    display_player_cards(top_pom, 'player', 'awards', 'Awards', limit=5)
+
+# IPL Winners page
+elif page == "IPL Winners":
+    st.title("🏆 IPL Champions by Year")
+
+    # Get final match of each season (highest match_number or latest date)
+    winners = run_query("""
+        WITH finals AS (
+            SELECT
+                season,
+                match_id,
+                match_date,
+                team1,
+                team2,
+                winner,
+                CASE
+                    WHEN win_by_runs > 0 THEN win_by_runs || ' runs'
+                    WHEN win_by_wickets > 0 THEN win_by_wickets || ' wickets'
+                    ELSE 'N/A'
+                END as margin,
+                player_of_match,
+                city,
+                ROW_NUMBER() OVER (PARTITION BY season ORDER BY match_date DESC, match_number DESC) as rn
+            FROM matches
+            WHERE winner IS NOT NULL
+        )
+        SELECT
+            season as "Season",
+            winner as "Champion",
+            CASE
+                WHEN team1 = winner THEN team2
+                ELSE team1
+            END as "Runner-up",
+            margin as "Victory Margin",
+            player_of_match as "Finals MVP",
+            city as "Venue"
+        FROM finals
+        WHERE rn = 1
+        ORDER BY season DESC
+    """)
+
+    # Display trophy count
+    st.subheader("Trophy Cabinet")
+    trophy_count = run_query("""
+        WITH finals AS (
+            SELECT season, winner,
+                   ROW_NUMBER() OVER (PARTITION BY season ORDER BY match_date DESC, match_number DESC) as rn
+            FROM matches
+            WHERE winner IS NOT NULL
+        )
+        SELECT winner as team, COUNT(*) as titles
+        FROM finals
+        WHERE rn = 1
+        GROUP BY winner
+        ORDER BY titles DESC
+    """)
+
+    # Display as columns with trophy emoji
+    cols = st.columns(len(trophy_count))
+    for i, (idx, row) in enumerate(trophy_count.iterrows()):
+        with cols[i]:
+            trophies = "🏆" * row['titles']
+            st.markdown(f"**{row['team']}**")
+            st.markdown(f"{trophies}")
+            st.caption(f"{row['titles']} title(s)")
+
+    st.divider()
+
+    # Full winners table
+    st.subheader("Season-wise Champions")
+    st.dataframe(winners, use_container_width=True, hide_index=True)
+
+    # Visualize wins by team
+    st.subheader("Titles Won by Team")
+    st.bar_chart(trophy_count.set_index('team')['titles'])
 
 # Batting Stats page
 elif page == "Batting Stats":
@@ -121,11 +231,13 @@ elif page == "Batting Stats":
     if selected_seasons:
         season_filter = ",".join([f"'{s}'" for s in selected_seasons])
 
-        # Top run scorers
+        # Top run scorers with photos
         st.subheader("Top Run Scorers")
         batting = run_query(f"""
             SELECT
                 d.batter,
+                p.key_cricinfo,
+                'https://a.espncdn.com/i/headshots/cricket/players/full/' || p.key_cricinfo || '.png' as photo_url,
                 COUNT(DISTINCT d.match_id) as matches,
                 SUM(d.batter_runs) as runs,
                 COUNT(CASE WHEN d.batter_runs > 0 THEN 1 END) as balls_faced,
@@ -134,13 +246,22 @@ elif page == "Batting Stats":
                 ROUND(SUM(d.batter_runs) * 100.0 / NULLIF(COUNT(CASE WHEN d.batter_runs >= 0 AND d.extras_type IS NULL OR d.extras_type NOT LIKE '%wides%' THEN 1 END), 0), 2) as strike_rate
             FROM deliveries d
             JOIN matches m ON d.match_id = m.match_id
+            LEFT JOIN people p ON d.batter = p.name
             WHERE m.season IN ({season_filter})
-            GROUP BY d.batter
+            GROUP BY d.batter, p.key_cricinfo
             HAVING SUM(d.batter_runs) >= {min_runs}
             ORDER BY runs DESC
             LIMIT 20
         """)
-        st.dataframe(batting, use_container_width=True, hide_index=True)
+
+        # Display top 5 with photos
+        if len(batting) > 0:
+            display_player_cards(batting, 'batter', 'runs', 'Runs', limit=5)
+            st.divider()
+
+        # Full table (hide photo columns)
+        display_cols = [c for c in batting.columns if c not in ['key_cricinfo', 'photo_url']]
+        st.dataframe(batting[display_cols], use_container_width=True, hide_index=True)
 
         # Top individual scores
         st.subheader("Highest Individual Scores")
@@ -179,11 +300,13 @@ elif page == "Bowling Stats":
     if selected_seasons:
         season_filter = ",".join([f"'{s}'" for s in selected_seasons])
 
-        # Top wicket takers
+        # Top wicket takers with photos
         st.subheader("Top Wicket Takers")
         bowling = run_query(f"""
             SELECT
                 d.bowler,
+                p.key_cricinfo,
+                'https://a.espncdn.com/i/headshots/cricket/players/full/' || p.key_cricinfo || '.png' as photo_url,
                 COUNT(DISTINCT d.match_id) as matches,
                 SUM(CASE WHEN d.is_wicket AND d.wicket_kind NOT IN ('run out', 'retired hurt', 'obstructing the field') THEN 1 ELSE 0 END) as wickets,
                 SUM(d.total_runs) as runs_conceded,
@@ -192,13 +315,22 @@ elif page == "Bowling Stats":
                 ROUND(COUNT(*) * 1.0 / NULLIF(SUM(CASE WHEN d.is_wicket AND d.wicket_kind NOT IN ('run out', 'retired hurt', 'obstructing the field') THEN 1 ELSE 0 END), 0), 2) as strike_rate
             FROM deliveries d
             JOIN matches m ON d.match_id = m.match_id
+            LEFT JOIN people p ON d.bowler = p.name
             WHERE m.season IN ({season_filter})
-            GROUP BY d.bowler
+            GROUP BY d.bowler, p.key_cricinfo
             HAVING SUM(CASE WHEN d.is_wicket AND d.wicket_kind NOT IN ('run out', 'retired hurt', 'obstructing the field') THEN 1 ELSE 0 END) >= {min_wickets}
             ORDER BY wickets DESC
             LIMIT 20
         """)
-        st.dataframe(bowling, use_container_width=True, hide_index=True)
+
+        # Display top 5 with photos
+        if len(bowling) > 0:
+            display_player_cards(bowling, 'bowler', 'wickets', 'Wickets', limit=5)
+            st.divider()
+
+        # Full table (hide photo columns)
+        display_cols = [c for c in bowling.columns if c not in ['key_cricinfo', 'photo_url']]
+        st.dataframe(bowling[display_cols], use_container_width=True, hide_index=True)
 
         # Best bowling figures
         st.subheader("Best Bowling Figures (Single Match)")
