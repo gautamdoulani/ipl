@@ -23,7 +23,8 @@
       "Bash(ls:*)",
       "Bash(grep:*)",
       "Bash(dbt run:*)",
-      "Bash(pkill:*)"
+      "Bash(pkill:*)",
+      "Bash(rm:*)"
     ]
   }
 }

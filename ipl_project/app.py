@@ -23,7 +23,6 @@ player_vs_team = st.Page("pages/6_Player_vs_Team.py", title="Player vs Team", ic
 player_at_venue = st.Page("pages/7_Player_at_Venue.py", title="Player at Venue", icon="🏟️")
 impact_players = st.Page("pages/8_Impact_Players.py", title="Impact Players", icon="⭐")
 sql_query = st.Page("pages/9_SQL_Query.py", title="SQL Query", icon="🔍")
-feedback = st.Page("pages/10_Feedback.py", title="Feedback", icon="📝")
 credits = st.Page("pages/13_Credits.py", title="Credits", icon="🙏")
 
 # Build navigation
@@ -32,7 +31,7 @@ pg = st.navigation({
     "Player Stats": [batting, bowling, player_profile],
     "Match & Venue": [match_analysis, stadium_profile],
     "Head to Head": [team_vs_team, player_vs_player, player_vs_team, player_at_venue],
-    "Other": [impact_players, sql_query, feedback, credits]
+    "Other": [impact_players, sql_query, credits]
 })
 
 # Run the selected page
