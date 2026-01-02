@@ -1,0 +1,146 @@
+version: 2
+
+metrics:
+  # Batting Metrics
+  - name: runs_scored
+    description: Total runs scored
+    type: simple
+    label: Runs
+    type_params:
+      measure: runs_scored
+
+  - name: balls_faced
+    description: Total balls faced
+    type: simple
+    label: Balls Faced
+    type_params:
+      measure: balls_faced
+
+  - name: dismissals
+    description: Number of dismissals
+    type: simple
+    label: Dismissals
+    type_params:
+      measure: dismissals
+
+  - name: fours_hit
+    description: Number of fours hit
+    type: simple
+    label: Fours
+    type_params:
+      measure: fours_hit
+
+  - name: sixes_hit
+    description: Number of sixes hit
+    type: simple
+    label: Sixes
+    type_params:
+      measure: sixes_hit
+
+  - name: batting_average
+    description: Batting average - total runs divided by dismissals
+    type: derived
+    label: Batting Average
+    type_params:
+      expr: runs_scored / nullif(dismissals, 0)
+      metrics:
+        - name: runs_scored
+        - name: dismissals
+
+  - name: batting_strike_rate
+    description: Batting strike rate - runs scored per 100 balls
+    type: derived
+    label: Strike Rate
+    type_params:
+      expr: (runs_scored * 100) / nullif(balls_faced, 0)
+      metrics:
+        - name: runs_scored
+        - name: balls_faced
+
+  - name: boundary_percentage
+    description: Percentage of runs from boundaries
+    type: derived
+    label: Boundary %
+    type_params:
+      expr: ((fours_hit * 4) + (sixes_hit * 6)) * 100 / nullif(runs_scored, 0)
+      metrics:
+        - name: fours_hit
+        - name: sixes_hit
+        - name: runs_scored
+
+  # Bowling Metrics
+  - name: runs_conceded
+    description: Total runs conceded
+    type: simple
+    label: Runs Conceded
+    type_params:
+      measure: runs_conceded
+
+  - name: balls_bowled
+    description: Total balls bowled
+    type: simple
+    label: Balls Bowled
+    type_params:
+      measure: balls_bowled
+
+  - name: wickets_taken
+    description: Total wickets taken
+    type: simple
+    label: Wickets
+    type_params:
+      measure: wickets_taken
+
+  - name: dot_balls_bowled
+    description: Number of dot balls bowled
+    type: simple
+    label: Dot Balls
+    type_params:
+      measure: dot_balls_bowled
+
+  - name: bowling_average
+    description: Bowling average - runs conceded per wicket
+    type: derived
+    label: Bowling Average
+    type_params:
+      expr: runs_conceded / nullif(wickets_taken, 0)
+      metrics:
+        - name: runs_conceded
+        - name: wickets_taken
+
+  - name: economy_rate
+    description: Economy rate - runs conceded per over
+    type: derived
+    label: Economy Rate
+    type_params:
+      expr: (runs_conceded * 6) / nullif(balls_bowled, 0)
+      metrics:
+        - name: runs_conceded
+        - name: balls_bowled
+
+  - name: bowling_strike_rate
+    description: Bowling strike rate - balls per wicket
+    type: derived
+    label: Bowling Strike Rate
+    type_params:
+      expr: balls_bowled / nullif(wickets_taken, 0)
+      metrics:
+        - name: balls_bowled
+        - name: wickets_taken
+
+  - name: dot_ball_percentage
+    description: Percentage of dot balls bowled
+    type: derived
+    label: Dot Ball %
+    type_params:
+      expr: (dot_balls_bowled * 100) / nullif(balls_bowled, 0)
+      metrics:
+        - name: dot_balls_bowled
+        - name: balls_bowled
+
+  # Match Metrics
+  - name: matches_played
+    description: Total matches played
+    type: simple
+    label: Matches
+    type_params:
+      measure: matches_played

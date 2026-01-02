@@ -1,0 +1,9 @@
+version: 2
+
+models:
+  - name: metricflow_time_spine
+    description: Time spine table for MetricFlow semantic layer
+    columns:
+      - name: date_day
+        description: The date (primary key)
+        granularity: day

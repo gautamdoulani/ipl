@@ -1,0 +1,192 @@
+version: 2
+
+semantic_models:
+  - name: batting_stats
+    description: Ball-by-ball batting statistics for calculating batting metrics
+    model: ref('stg_deliveries')
+    defaults:
+      agg_time_dimension: match_date
+
+    entities:
+      - name: batter
+        type: primary
+        expr: batter
+      - name: match
+        type: foreign
+        expr: match_id
+      - name: bowler
+        type: foreign
+        expr: bowler
+
+    dimensions:
+      - name: match_id
+        type: categorical
+        expr: match_id
+      - name: batting_team
+        type: categorical
+        expr: batting_team
+      - name: innings
+        type: categorical
+        expr: innings
+      - name: over_number
+        type: categorical
+        expr: over_number
+      - name: match_date
+        type: time
+        type_params:
+          time_granularity: day
+        expr: match_date
+
+    measures:
+      - name: runs_scored
+        description: Total runs scored by batter
+        agg: sum
+        expr: batter_runs
+      - name: balls_faced
+        description: Total balls faced (excluding wides)
+        agg: sum
+        expr: "case when extras_type is null or extras_type not like '%wides%' then 1 else 0 end"
+      - name: fours_hit
+        description: Number of boundaries (4s)
+        agg: sum
+        expr: "case when batter_runs = 4 then 1 else 0 end"
+      - name: sixes_hit
+        description: Number of sixes
+        agg: sum
+        expr: "case when batter_runs = 6 then 1 else 0 end"
+      - name: dismissals
+        description: Number of times batter was dismissed
+        agg: sum
+        expr: "case when is_wicket and wicket_player_out = batter then 1 else 0 end"
+      - name: dot_balls_faced
+        description: Number of dot balls faced
+        agg: sum
+        expr: "case when batter_runs = 0 and (extras_type is null or extras_type not like '%wides%') then 1 else 0 end"
+
+  - name: bowling_stats
+    description: Ball-by-ball bowling statistics for calculating bowling metrics
+    model: ref('stg_deliveries')
+    defaults:
+      agg_time_dimension: match_date
+
+    entities:
+      - name: bowler
+        type: primary
+        expr: bowler
+      - name: match
+        type: foreign
+        expr: match_id
+      - name: batter
+        type: foreign
+        expr: batter
+
+    dimensions:
+      - name: match_id
+        type: categorical
+        expr: match_id
+      - name: batting_team
+        type: categorical
+        expr: batting_team
+      - name: innings
+        type: categorical
+        expr: innings
+      - name: wicket_kind
+        type: categorical
+        expr: wicket_kind
+      - name: match_date
+        type: time
+        type_params:
+          time_granularity: day
+        expr: match_date
+
+    measures:
+      - name: runs_conceded
+        description: Total runs conceded by bowler
+        agg: sum
+        expr: total_runs
+      - name: balls_bowled
+        description: Total balls bowled
+        agg: count
+        expr: "1"
+      - name: wickets_taken
+        description: Wickets taken (excluding run outs, retired hurt)
+        agg: sum
+        expr: "case when is_wicket and wicket_kind not in ('run out', 'retired hurt', 'retired out', 'obstructing the field') then 1 else 0 end"
+      - name: dot_balls_bowled
+        description: Number of dot balls bowled
+        agg: sum
+        expr: "case when total_runs = 0 then 1 else 0 end"
+      - name: fours_conceded
+        description: Number of fours conceded
+        agg: sum
+        expr: "case when batter_runs = 4 then 1 else 0 end"
+      - name: sixes_conceded
+        description: Number of sixes conceded
+        agg: sum
+        expr: "case when batter_runs = 6 then 1 else 0 end"
+      - name: extras_bowled
+        description: Extras given (wides and no balls)
+        agg: sum
+        expr: "case when extras_type like '%wides%' or extras_type like '%noballs%' then 1 else 0 end"
+
+  - name: match_stats
+    description: Match-level statistics
+    model: ref('stg_matches')
+    defaults:
+      agg_time_dimension: match_date
+
+    entities:
+      - name: match
+        type: primary
+        expr: match_id
+      - name: winner_team
+        type: foreign
+        expr: winner
+
+    dimensions:
+      - name: season
+        type: categorical
+        expr: season
+      - name: city
+        type: categorical
+        expr: city
+      - name: venue
+        type: categorical
+        expr: venue
+      - name: team1
+        type: categorical
+        expr: team1
+      - name: team2
+        type: categorical
+        expr: team2
+      - name: winner
+        type: categorical
+        expr: winner
+      - name: toss_winner
+        type: categorical
+        expr: toss_winner
+      - name: toss_decision
+        type: categorical
+        expr: toss_decision
+      - name: player_of_match
+        type: categorical
+        expr: player_of_match
+      - name: match_date
+        type: time
+        type_params:
+          time_granularity: day
+        expr: match_date
+
+    measures:
+      - name: matches_played
+        description: Count of matches
+        agg: count
+        expr: match_id
+      - name: total_win_by_runs
+        description: Total runs margin in wins
+        agg: sum
+        expr: "coalesce(win_by_runs, 0)"
+      - name: total_win_by_wickets
+        description: Total wickets margin in wins
+        agg: sum
+        expr: "coalesce(win_by_wickets, 0)"

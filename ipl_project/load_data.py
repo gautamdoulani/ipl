@@ -10,7 +10,7 @@ def load_ipl_data():
     db_path = Path(__file__).parent / "ipl.duckdb"
     conn = duckdb.connect(str(db_path))
 
-    # Create tables
+    # Create tables with player IDs from registry
     conn.execute("""
         CREATE OR REPLACE TABLE matches (
             match_id VARCHAR PRIMARY KEY,
@@ -32,6 +32,7 @@ def load_ipl_data():
             win_by_runs INTEGER,
             win_by_wickets INTEGER,
             player_of_match VARCHAR,
+            player_of_match_id VARCHAR,
             umpire1 VARCHAR,
             umpire2 VARCHAR
         )
@@ -45,8 +46,11 @@ def load_ipl_data():
             over_number INTEGER,
             ball_number INTEGER,
             batter VARCHAR,
+            batter_id VARCHAR,
             bowler VARCHAR,
+            bowler_id VARCHAR,
             non_striker VARCHAR,
+            non_striker_id VARCHAR,
             batter_runs INTEGER,
             extras_runs INTEGER,
             total_runs INTEGER,
@@ -54,7 +58,20 @@ def load_ipl_data():
             is_wicket BOOLEAN,
             wicket_kind VARCHAR,
             wicket_player_out VARCHAR,
+            wicket_player_out_id VARCHAR,
             wicket_fielders VARCHAR
+        )
+    """)
+
+    conn.execute("""
+        CREATE OR REPLACE TABLE impact_players (
+            match_id VARCHAR,
+            season VARCHAR,
+            team VARCHAR,
+            player_in VARCHAR,
+            player_in_id VARCHAR,
+            player_out VARCHAR,
+            player_out_id VARCHAR
         )
     """)
 
@@ -64,6 +81,7 @@ def load_ipl_data():
 
     matches_data = []
     deliveries_data = []
+    impact_players_data = []
 
     print(f"Processing {len(json_files)} JSON files...")
 
@@ -79,6 +97,9 @@ def load_ipl_data():
 
         match_id = json_file.stem
         info = data.get('info', {})
+
+        # Get registry for player ID lookups
+        registry = info.get('registry', {}).get('people', {})
 
         # Extract match info
         dates = info.get('dates', [])
@@ -100,6 +121,7 @@ def load_ipl_data():
         # Player of match
         pom = info.get('player_of_match', [])
         player_of_match = pom[0] if pom else None
+        player_of_match_id = registry.get(player_of_match) if player_of_match else None
 
         # Umpires
         officials = info.get('officials', {})
@@ -133,11 +155,12 @@ def load_ipl_data():
             'win_by_runs': win_by_runs,
             'win_by_wickets': win_by_wickets,
             'player_of_match': player_of_match,
+            'player_of_match_id': player_of_match_id,
             'umpire1': umpire1,
             'umpire2': umpire2
         })
 
-        # Extract deliveries
+        # Extract deliveries with player IDs
         for innings_num, innings in enumerate(data.get('innings', []), 1):
             batting_team = innings.get('team')
 
@@ -153,17 +176,28 @@ def load_ipl_data():
                     if extras:
                         extras_type = ','.join(extras.keys())
 
+                    # Player names and IDs
+                    batter = delivery.get('batter')
+                    bowler = delivery.get('bowler')
+                    non_striker = delivery.get('non_striker')
+
+                    batter_id = registry.get(batter)
+                    bowler_id = registry.get(bowler)
+                    non_striker_id = registry.get(non_striker)
+
                     # Wicket info
                     wickets = delivery.get('wickets', [])
                     is_wicket = len(wickets) > 0
                     wicket_kind = None
                     wicket_player_out = None
+                    wicket_player_out_id = None
                     wicket_fielders = None
 
                     if wickets:
                         w = wickets[0]
                         wicket_kind = w.get('kind')
                         wicket_player_out = w.get('player_out')
+                        wicket_player_out_id = registry.get(wicket_player_out)
                         fielders = w.get('fielders', [])
                         if fielders:
                             wicket_fielders = ','.join([f.get('name', str(f)) if isinstance(f, dict) else str(f) for f in fielders])
@@ -174,9 +208,12 @@ def load_ipl_data():
                         'batting_team': batting_team,
                         'over_number': over_number,
                         'ball_number': ball_num,
-                        'batter': delivery.get('batter'),
-                        'bowler': delivery.get('bowler'),
-                        'non_striker': delivery.get('non_striker'),
+                        'batter': batter,
+                        'batter_id': batter_id,
+                        'bowler': bowler,
+                        'bowler_id': bowler_id,
+                        'non_striker': non_striker,
+                        'non_striker_id': non_striker_id,
                         'batter_runs': runs.get('batter', 0),
                         'extras_runs': runs.get('extras', 0),
                         'total_runs': runs.get('total', 0),
@@ -184,8 +221,27 @@ def load_ipl_data():
                         'is_wicket': is_wicket,
                         'wicket_kind': wicket_kind,
                         'wicket_player_out': wicket_player_out,
+                        'wicket_player_out_id': wicket_player_out_id,
                         'wicket_fielders': wicket_fielders
                     })
+
+                    # Extract impact player replacements
+                    replacements = delivery.get('replacements', {})
+                    match_replacements = replacements.get('match', [])
+                    for repl in match_replacements:
+                        if repl.get('reason') == 'impact_player':
+                            player_in = repl.get('in')
+                            player_out = repl.get('out')
+                            team = repl.get('team')
+                            impact_players_data.append({
+                                'match_id': match_id,
+                                'season': season,
+                                'team': team,
+                                'player_in': player_in,
+                                'player_in_id': registry.get(player_in),
+                                'player_out': player_out,
+                                'player_out_id': registry.get(player_out)
+                            })
 
         if (i + 1) % 100 == 0:
             print(f"Processed {i + 1} files...")
@@ -197,7 +253,8 @@ def load_ipl_data():
             $match_id, $season, $city, $venue, $match_date, $match_number,
             $event_name, $match_type, $gender, $overs, $balls_per_over,
             $team1, $team2, $toss_winner, $toss_decision, $winner,
-            $win_by_runs, $win_by_wickets, $player_of_match, $umpire1, $umpire2
+            $win_by_runs, $win_by_wickets, $player_of_match, $player_of_match_id,
+            $umpire1, $umpire2
         )
     """, matches_data)
 
@@ -205,11 +262,18 @@ def load_ipl_data():
     conn.executemany("""
         INSERT INTO deliveries VALUES (
             $match_id, $innings, $batting_team, $over_number, $ball_number,
-            $batter, $bowler, $non_striker, $batter_runs, $extras_runs,
-            $total_runs, $extras_type, $is_wicket, $wicket_kind,
-            $wicket_player_out, $wicket_fielders
+            $batter, $batter_id, $bowler, $bowler_id, $non_striker, $non_striker_id,
+            $batter_runs, $extras_runs, $total_runs, $extras_type, $is_wicket,
+            $wicket_kind, $wicket_player_out, $wicket_player_out_id, $wicket_fielders
         )
     """, deliveries_data)
+
+    print(f"Inserting {len(impact_players_data)} impact player records...")
+    conn.executemany("""
+        INSERT INTO impact_players VALUES (
+            $match_id, $season, $team, $player_in, $player_in_id, $player_out, $player_out_id
+        )
+    """, impact_players_data)
 
     conn.commit()
 
@@ -221,11 +285,18 @@ def load_ipl_data():
     result = conn.execute("SELECT COUNT(*) as cnt FROM deliveries").fetchone()
     print(f"Deliveries: {result[0]}")
 
+    # Verify player IDs
+    result = conn.execute("SELECT COUNT(DISTINCT batter_id) as cnt FROM deliveries WHERE batter_id IS NOT NULL").fetchone()
+    print(f"Unique batters with ID: {result[0]}")
+
+    result = conn.execute("SELECT COUNT(DISTINCT bowler_id) as cnt FROM deliveries WHERE bowler_id IS NOT NULL").fetchone()
+    print(f"Unique bowlers with ID: {result[0]}")
+
     result = conn.execute("SELECT MIN(match_date), MAX(match_date) FROM matches").fetchone()
     print(f"Date range: {result[0]} to {result[1]}")
 
-    result = conn.execute("SELECT DISTINCT season FROM matches ORDER BY season").fetchall()
-    print(f"Seasons: {', '.join([r[0] for r in result if r[0]])}")
+    result = conn.execute("SELECT COUNT(*) as cnt FROM impact_players").fetchone()
+    print(f"Impact player substitutions: {result[0]}")
 
     conn.close()
     print("\nDone!")

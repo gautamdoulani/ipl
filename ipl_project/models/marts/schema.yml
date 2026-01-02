@@ -1,0 +1,86 @@
+version: 2
+
+models:
+  - name: batting_metrics
+    description: Aggregated batting statistics for all IPL players
+    columns:
+      - name: batter
+        description: Player name
+      - name: matches
+        description: Number of matches played
+      - name: innings
+        description: Number of innings batted
+      - name: total_runs
+        description: Total runs scored
+      - name: total_balls
+        description: Total balls faced
+      - name: dismissals
+        description: Number of times dismissed
+      - name: highest_score
+        description: Highest individual score
+      - name: total_fours
+        description: Total boundaries (4s)
+      - name: total_sixes
+        description: Total sixes
+      - name: fifties
+        description: Number of half-centuries (50-99)
+      - name: centuries
+        description: Number of centuries (100+)
+      - name: batting_average
+        description: Batting average (runs / dismissals)
+      - name: strike_rate
+        description: Batting strike rate (runs * 100 / balls)
+      - name: boundary_percentage
+        description: Percentage of runs from boundaries
+
+  - name: bowling_metrics
+    description: Aggregated bowling statistics for all IPL players
+    columns:
+      - name: bowler
+        description: Player name
+      - name: matches
+        description: Number of matches played
+      - name: innings
+        description: Number of innings bowled
+      - name: overs
+        description: Total overs bowled (format X.Y)
+      - name: total_runs_conceded
+        description: Total runs conceded
+      - name: total_wickets
+        description: Total wickets taken
+      - name: best_bowling
+        description: Best bowling figures (wickets/runs)
+      - name: bowling_average
+        description: Bowling average (runs / wickets)
+      - name: economy_rate
+        description: Economy rate (runs per over)
+      - name: strike_rate
+        description: Bowling strike rate (balls per wicket)
+      - name: dot_ball_percentage
+        description: Percentage of dot balls bowled
+      - name: four_wicket_hauls
+        description: Number of 4+ wicket innings
+      - name: five_wicket_hauls
+        description: Number of 5+ wicket innings
+
+  - name: team_metrics
+    description: Aggregated team statistics
+    columns:
+      - name: team
+        description: Team name
+      - name: matches_played
+        description: Total matches played
+      - name: matches_won
+        description: Total matches won
+      - name: matches_lost
+        description: Total matches lost
+      - name: win_percentage
+        description: Win percentage
+      - name: total_runs_scored
+        description: Total runs scored
+      - name: avg_runs_per_match
+        description: Average runs per match
+      - name: team_strike_rate
+        description: Overall team batting strike rate
+      - name: team_economy_rate
+        description: Overall team bowling economy rate

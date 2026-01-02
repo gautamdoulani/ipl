@@ -1,0 +1,12 @@
+version: 2
+
+sources:
+  - name: raw
+    schema: main
+    tables:
+      - name: matches
+        description: IPL match data
+      - name: deliveries
+        description: Ball-by-ball delivery data
+      - name: people
+        description: Player registry with ESPN IDs
