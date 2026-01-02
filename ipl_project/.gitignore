@@ -1,0 +1,11 @@
+target/
+dbt_packages/
+logs/
+
+# Keep ipl.duckdb for Streamlit Cloud deployment
+# Raw data files (can be regenerated)
+ipl_json/
+ipl_json.zip
+people.csv
+__pycache__/
+*.pyc

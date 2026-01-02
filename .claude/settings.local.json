@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(duckdb:*)",
+      "Bash(curl:*)",
+      "Bash(pip show:*)",
+      "Bash(pip install:*)",
+      "Bash(lsof:*)",
+      "Bash(git remote set-url:*)",
+      "Bash(git add:*)"
+    ]
+  }
+}
