@@ -1,9 +1,9 @@
-"""IPL Data Explorer - Overview/Home page."""
+"""WPL Data Explorer - Overview/Home page."""
 
 import streamlit as st
 from utils import run_query, display_team_logo, get_responsive_columns
 
-st.title("🏏 IPL Data Explorer")
+st.title("🏏 WPL Data Explorer")
 
 # Get final match of each season from staging model
 winners = run_query("""
@@ -12,9 +12,9 @@ winners = run_query("""
             season,
             match_id,
             match_date,
-            REPLACE(REPLACE(team1, 'Royal Challengers Bangalore', 'Royal Challengers Bengaluru'), 'Rising Pune Supergiants', 'Rising Pune Supergiant') as team1,
-            REPLACE(REPLACE(team2, 'Royal Challengers Bangalore', 'Royal Challengers Bengaluru'), 'Rising Pune Supergiants', 'Rising Pune Supergiant') as team2,
-            REPLACE(REPLACE(winner, 'Royal Challengers Bangalore', 'Royal Challengers Bengaluru'), 'Rising Pune Supergiants', 'Rising Pune Supergiant') as winner,
+            REPLACE(team1, 'Royal Challengers Bangalore', 'Royal Challengers Bengaluru') as team1,
+            REPLACE(team2, 'Royal Challengers Bangalore', 'Royal Challengers Bengaluru') as team2,
+            REPLACE(winner, 'Royal Challengers Bangalore', 'Royal Challengers Bengaluru') as winner,
             CASE
                 WHEN win_by_runs > 0 THEN win_by_runs || ' runs'
                 WHEN win_by_wickets > 0 THEN win_by_wickets || ' wickets'
@@ -47,7 +47,7 @@ st.subheader("Trophy Cabinet")
 trophy_count = run_query("""
     WITH finals AS (
         SELECT season,
-               REPLACE(REPLACE(winner, 'Royal Challengers Bangalore', 'Royal Challengers Bengaluru'), 'Rising Pune Supergiants', 'Rising Pune Supergiant') as winner,
+               REPLACE(winner, 'Royal Challengers Bangalore', 'Royal Challengers Bengaluru') as winner,
                ROW_NUMBER() OVER (PARTITION BY season ORDER BY match_date DESC, match_number DESC) as rn
         FROM stg_matches
         WHERE winner IS NOT NULL
@@ -69,7 +69,7 @@ trophy_count = run_query("""
 
 # Display as columns with team logos and trophy emoji - responsive
 num_teams = len(trophy_count)
-num_cols = get_responsive_columns(num_teams, max_desktop=7, max_tablet=4, max_mobile=2)
+num_cols = get_responsive_columns(num_teams, max_desktop=5, max_tablet=3, max_mobile=2)
 cols = st.columns(num_cols)
 for i, (_, row) in enumerate(trophy_count.iterrows()):
     with cols[i % num_cols]:
@@ -111,15 +111,15 @@ team_season_perf = run_query("""
     WITH team_season AS (
         SELECT
             season,
-            REPLACE(REPLACE(team1, 'Royal Challengers Bangalore', 'Royal Challengers Bengaluru'), 'Rising Pune Supergiants', 'Rising Pune Supergiant') as team,
-            CASE WHEN REPLACE(REPLACE(winner, 'Royal Challengers Bangalore', 'Royal Challengers Bengaluru'), 'Rising Pune Supergiants', 'Rising Pune Supergiant') = REPLACE(REPLACE(team1, 'Royal Challengers Bangalore', 'Royal Challengers Bengaluru'), 'Rising Pune Supergiants', 'Rising Pune Supergiant') THEN 1 ELSE 0 END as won
+            REPLACE(team1, 'Royal Challengers Bangalore', 'Royal Challengers Bengaluru') as team,
+            CASE WHEN REPLACE(winner, 'Royal Challengers Bangalore', 'Royal Challengers Bengaluru') = REPLACE(team1, 'Royal Challengers Bangalore', 'Royal Challengers Bengaluru') THEN 1 ELSE 0 END as won
         FROM stg_matches
         WHERE winner IS NOT NULL
         UNION ALL
         SELECT
             season,
-            REPLACE(REPLACE(team2, 'Royal Challengers Bangalore', 'Royal Challengers Bengaluru'), 'Rising Pune Supergiants', 'Rising Pune Supergiant') as team,
-            CASE WHEN REPLACE(REPLACE(winner, 'Royal Challengers Bangalore', 'Royal Challengers Bengaluru'), 'Rising Pune Supergiants', 'Rising Pune Supergiant') = REPLACE(REPLACE(team2, 'Royal Challengers Bangalore', 'Royal Challengers Bengaluru'), 'Rising Pune Supergiants', 'Rising Pune Supergiant') THEN 1 ELSE 0 END as won
+            REPLACE(team2, 'Royal Challengers Bangalore', 'Royal Challengers Bengaluru') as team,
+            CASE WHEN REPLACE(winner, 'Royal Challengers Bangalore', 'Royal Challengers Bengaluru') = REPLACE(team2, 'Royal Challengers Bangalore', 'Royal Challengers Bengaluru') THEN 1 ELSE 0 END as won
         FROM stg_matches
         WHERE winner IS NOT NULL
     ),

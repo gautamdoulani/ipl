@@ -1,20 +1,26 @@
-"""IPL Data Explorer - Overview/Home page."""
+"""Cricket Data Explorer - Overview/Home page."""
 
 import streamlit as st
+from config import CONFIG, get_team_replacement_sql
 from utils import run_query, display_team_logo, get_responsive_columns
 
-st.title("🏏 IPL Data Explorer")
+st.title(f"🏏 {CONFIG['display_name']}")
+
+# Build team replacement SQL for this league
+team1_sql = get_team_replacement_sql("team1")
+team2_sql = get_team_replacement_sql("team2")
+winner_sql = get_team_replacement_sql("winner")
 
 # Get final match of each season from staging model
-winners = run_query("""
+winners = run_query(f"""
     WITH finals AS (
         SELECT
             season,
             match_id,
             match_date,
-            REPLACE(REPLACE(team1, 'Royal Challengers Bangalore', 'Royal Challengers Bengaluru'), 'Rising Pune Supergiants', 'Rising Pune Supergiant') as team1,
-            REPLACE(REPLACE(team2, 'Royal Challengers Bangalore', 'Royal Challengers Bengaluru'), 'Rising Pune Supergiants', 'Rising Pune Supergiant') as team2,
-            REPLACE(REPLACE(winner, 'Royal Challengers Bangalore', 'Royal Challengers Bengaluru'), 'Rising Pune Supergiants', 'Rising Pune Supergiant') as winner,
+            {team1_sql} as team1,
+            {team2_sql} as team2,
+            {winner_sql} as winner,
             CASE
                 WHEN win_by_runs > 0 THEN win_by_runs || ' runs'
                 WHEN win_by_wickets > 0 THEN win_by_wickets || ' wickets'
@@ -44,10 +50,10 @@ winners = run_query("""
 
 # Display trophy count with years
 st.subheader("Trophy Cabinet")
-trophy_count = run_query("""
+trophy_count = run_query(f"""
     WITH finals AS (
         SELECT season,
-               REPLACE(REPLACE(winner, 'Royal Challengers Bangalore', 'Royal Challengers Bengaluru'), 'Rising Pune Supergiants', 'Rising Pune Supergiant') as winner,
+               {winner_sql} as winner,
                ROW_NUMBER() OVER (PARTITION BY season ORDER BY match_date DESC, match_number DESC) as rn
         FROM stg_matches
         WHERE winner IS NOT NULL
@@ -107,19 +113,19 @@ st.divider()
 st.subheader("Team Performance by Season")
 st.caption("Win percentage by team across seasons")
 
-team_season_perf = run_query("""
+team_season_perf = run_query(f"""
     WITH team_season AS (
         SELECT
             season,
-            REPLACE(REPLACE(team1, 'Royal Challengers Bangalore', 'Royal Challengers Bengaluru'), 'Rising Pune Supergiants', 'Rising Pune Supergiant') as team,
-            CASE WHEN REPLACE(REPLACE(winner, 'Royal Challengers Bangalore', 'Royal Challengers Bengaluru'), 'Rising Pune Supergiants', 'Rising Pune Supergiant') = REPLACE(REPLACE(team1, 'Royal Challengers Bangalore', 'Royal Challengers Bengaluru'), 'Rising Pune Supergiants', 'Rising Pune Supergiant') THEN 1 ELSE 0 END as won
+            {team1_sql} as team,
+            CASE WHEN {winner_sql} = {team1_sql} THEN 1 ELSE 0 END as won
         FROM stg_matches
         WHERE winner IS NOT NULL
         UNION ALL
         SELECT
             season,
-            REPLACE(REPLACE(team2, 'Royal Challengers Bangalore', 'Royal Challengers Bengaluru'), 'Rising Pune Supergiants', 'Rising Pune Supergiant') as team,
-            CASE WHEN REPLACE(REPLACE(winner, 'Royal Challengers Bangalore', 'Royal Challengers Bengaluru'), 'Rising Pune Supergiants', 'Rising Pune Supergiant') = REPLACE(REPLACE(team2, 'Royal Challengers Bangalore', 'Royal Challengers Bengaluru'), 'Rising Pune Supergiants', 'Rising Pune Supergiant') THEN 1 ELSE 0 END as won
+            {team2_sql} as team,
+            CASE WHEN {winner_sql} = {team2_sql} THEN 1 ELSE 0 END as won
         FROM stg_matches
         WHERE winner IS NOT NULL
     ),
@@ -193,6 +199,6 @@ if len(team_season_perf) > 0:
     table_height = (len(matrix) + 1) * 35 + 10
     st.markdown('<p class="scroll-hint">↔️ Scroll horizontally on mobile to see all seasons</p>', unsafe_allow_html=True)
     styled_formatted = formatted.style.apply(style_matrix_with_champions, axis=1)
-    st.dataframe(styled_formatted, use_container_width=True, height=table_height)
+    st.dataframe(styled_formatted, width="stretch", height=table_height)
 
     st.caption("🟢 60%+ | 🟡 50-59% | 🟠 40-49% | 🔴 <40% | 🏆 = Championship winner")

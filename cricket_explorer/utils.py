@@ -1,4 +1,4 @@
-"""Shared utilities for IPL Explorer app."""
+"""Shared utilities for Cricket Data Explorer app."""
 
 import base64
 import os
@@ -8,6 +8,8 @@ import duckdb
 import pandas as pd
 import requests
 import streamlit as st
+
+from config import CONFIG
 
 
 def inject_mobile_styles():
@@ -103,19 +105,16 @@ def inject_mobile_styles():
 
 def get_responsive_columns(total_items, max_desktop=5, max_tablet=3, max_mobile=2):
     """Return appropriate number of columns based on content and provide column count."""
-    # Streamlit doesn't have built-in screen detection, so we use a reasonable default
-    # that works across devices. The CSS media queries handle the visual adjustments.
-    # For fewer items, use fewer columns
     return min(total_items, max_desktop)
 
 
-# Database connection - use writable path for Streamlit Cloud
-DB_PATH = Path(__file__).parent / "ipl.duckdb"
+# Database connection - use data directory
+DB_PATH = Path(__file__).parent / "data" / CONFIG["db_file"]
 
 # For Streamlit Cloud, copy to tmp if needed (since app directory is read-only)
 if os.environ.get('STREAMLIT_SHARING_MODE') or not os.access(DB_PATH.parent, os.W_OK):
     import shutil
-    TMP_DB = Path("/tmp/ipl.duckdb")
+    TMP_DB = Path(f"/tmp/{CONFIG['db_file']}")
     if not TMP_DB.exists() and DB_PATH.exists():
         shutil.copy(DB_PATH, TMP_DB)
     DB_PATH = TMP_DB
@@ -124,36 +123,19 @@ if os.environ.get('STREAMLIT_SHARING_MODE') or not os.access(DB_PATH.parent, os.
 LOGO_DIR = Path(__file__).parent / "logos"
 PLAYER_PLACEHOLDER = LOGO_DIR / "player_placeholder.png"
 
-# IPL Team Colors
-TEAM_COLORS = {
-    'Chennai Super Kings': '#FFCB05',
-    'Mumbai Indians': '#004BA0',
-    'Royal Challengers Bengaluru': '#EC1C24',
-    'Royal Challengers Bangalore': '#EC1C24',
-    'Kolkata Knight Riders': '#3A225D',
-    'Delhi Capitals': '#004C93',
-    'Delhi Daredevils': '#004C93',
-    'Punjab Kings': '#DD1F2D',
-    'Kings XI Punjab': '#DD1F2D',
-    'Rajasthan Royals': '#EA1A85',
-    'Sunrisers Hyderabad': '#F7A721',
-    'Gujarat Titans': '#0B4973',
-    'Lucknow Super Giants': '#00A9E0',
-    'Deccan Chargers': '#D5A239',
-    'Pune Warriors': '#2F9BE3',
-    'Gujarat Lions': '#E04F16',
-    'Rising Pune Supergiant': '#6F61A0',
-    'Rising Pune Supergiants': '#6F61A0',
-    'Kochi Tuskers Kerala': '#FF6B00',
-}
+# Team colors from config
+TEAM_COLORS = CONFIG["teams"]
+
 
 @st.cache_resource
 def get_connection():
     return duckdb.connect(str(DB_PATH), read_only=True)
 
+
 def run_query(query: str) -> pd.DataFrame:
     conn = get_connection()
     return conn.execute(query).fetchdf()
+
 
 def get_team_logo_path(team_name):
     """Get local path for team logo."""
@@ -164,6 +146,7 @@ def get_team_logo_path(team_name):
     if logo_path.exists():
         return str(logo_path)
     return None
+
 
 def display_team_logo(team_name, size=80):
     """Display team logo with proper sizing using HTML/CSS to prevent distortion."""
@@ -176,6 +159,7 @@ def display_team_logo(team_name, size=80):
             unsafe_allow_html=True
         )
 
+
 @st.cache_data(ttl=3600)
 def check_image_exists(url):
     """Check if image URL returns valid response with actual image content."""
@@ -183,17 +167,16 @@ def check_image_exists(url):
         resp = requests.head(url, timeout=2, allow_redirects=True)
         if resp.status_code != 200:
             return False
-        # Check content-type is an image
         content_type = resp.headers.get('content-type', '')
         if not content_type.startswith('image/'):
             return False
-        # Check content-length is reasonable (more than 1KB for a real photo)
         content_length = resp.headers.get('content-length', '0')
         if int(content_length) < 1000:
             return False
         return True
     except (requests.RequestException, requests.Timeout, ValueError):
         return False
+
 
 def display_player_image(photo_url, cricinfo_id, size=100):
     """Display player image with consistent sizing using HTML/CSS."""
@@ -215,9 +198,9 @@ def display_player_image(photo_url, cricinfo_id, size=100):
             unsafe_allow_html=True
         )
 
+
 def display_player_cards(df, name_col, stat_col, stat_label, limit=5):
     """Display player cards with photos - mobile responsive."""
-    # Use responsive column count (CSS handles visual adjustments)
     num_items = min(len(df), limit)
     num_cols = get_responsive_columns(num_items, max_desktop=5, max_tablet=3, max_mobile=2)
     cols = st.columns(num_cols)
@@ -234,4 +217,3 @@ def display_player_cards(df, name_col, stat_col, stat_label, limit=5):
             else:
                 st.metric(stat_label, val)
             st.markdown('</div>', unsafe_allow_html=True)
-

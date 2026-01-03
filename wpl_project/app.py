@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""IPL Data Explorer - Multi-page Streamlit App."""
+"""WPL Data Explorer - Multi-page Streamlit App."""
 
 import streamlit as st
 from utils import inject_mobile_styles
 
 # Page config - must be first Streamlit command
 st.set_page_config(
-    page_title="IPL Data Explorer",
+    page_title="WPL Data Explorer",
     page_icon="🏏",
     layout="wide"
 )
@@ -26,7 +26,6 @@ player_vs_player = st.Page("pages/5_Player_vs_Player.py", title="Player vs Playe
 player_vs_team = st.Page("pages/6_Player_vs_Team.py", title="Player vs Team", icon="⚔️")
 player_at_venue = st.Page("pages/7_Player_at_Venue.py", title="Player at Venue", icon="🏟️")
 compare_players = st.Page("pages/14_Compare_Players.py", title="Compare Players", icon="📊")
-impact_players = st.Page("pages/8_Impact_Players.py", title="Impact Players", icon="⭐")
 sql_query = st.Page("pages/9_SQL_Query.py", title="SQL Query", icon="🔍")
 credits = st.Page("pages/13_Credits.py", title="Credits", icon="🙏")
 
@@ -36,7 +35,7 @@ pg = st.navigation({
     "Player Stats": [batting, bowling, player_profile, compare_players],
     "Match & Venue": [match_analysis, stadium_profile],
     "Head to Head": [team_vs_team, player_vs_player, player_vs_team, player_at_venue],
-    "Other": [impact_players, sql_query, credits]
+    "Other": [sql_query, credits]
 })
 
 # Run the selected page

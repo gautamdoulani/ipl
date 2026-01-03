@@ -1,4 +1,4 @@
-"""Shared utilities for IPL Explorer app."""
+"""Shared utilities for WPL Explorer app."""
 
 import base64
 import os
@@ -108,14 +108,13 @@ def get_responsive_columns(total_items, max_desktop=5, max_tablet=3, max_mobile=
     # For fewer items, use fewer columns
     return min(total_items, max_desktop)
 
-
 # Database connection - use writable path for Streamlit Cloud
-DB_PATH = Path(__file__).parent / "ipl.duckdb"
+DB_PATH = Path(__file__).parent / "wpl.duckdb"
 
 # For Streamlit Cloud, copy to tmp if needed (since app directory is read-only)
 if os.environ.get('STREAMLIT_SHARING_MODE') or not os.access(DB_PATH.parent, os.W_OK):
     import shutil
-    TMP_DB = Path("/tmp/ipl.duckdb")
+    TMP_DB = Path("/tmp/wpl.duckdb")
     if not TMP_DB.exists() and DB_PATH.exists():
         shutil.copy(DB_PATH, TMP_DB)
     DB_PATH = TMP_DB
@@ -124,27 +123,14 @@ if os.environ.get('STREAMLIT_SHARING_MODE') or not os.access(DB_PATH.parent, os.
 LOGO_DIR = Path(__file__).parent / "logos"
 PLAYER_PLACEHOLDER = LOGO_DIR / "player_placeholder.png"
 
-# IPL Team Colors
+# WPL Team Colors
 TEAM_COLORS = {
-    'Chennai Super Kings': '#FFCB05',
     'Mumbai Indians': '#004BA0',
-    'Royal Challengers Bengaluru': '#EC1C24',
-    'Royal Challengers Bangalore': '#EC1C24',
-    'Kolkata Knight Riders': '#3A225D',
     'Delhi Capitals': '#004C93',
-    'Delhi Daredevils': '#004C93',
-    'Punjab Kings': '#DD1F2D',
-    'Kings XI Punjab': '#DD1F2D',
-    'Rajasthan Royals': '#EA1A85',
-    'Sunrisers Hyderabad': '#F7A721',
-    'Gujarat Titans': '#0B4973',
-    'Lucknow Super Giants': '#00A9E0',
-    'Deccan Chargers': '#D5A239',
-    'Pune Warriors': '#2F9BE3',
-    'Gujarat Lions': '#E04F16',
-    'Rising Pune Supergiant': '#6F61A0',
-    'Rising Pune Supergiants': '#6F61A0',
-    'Kochi Tuskers Kerala': '#FF6B00',
+    'Royal Challengers Bangalore': '#EC1C24',
+    'Royal Challengers Bengaluru': '#EC1C24',
+    'Gujarat Giants': '#E04F16',
+    'UP Warriorz': '#6B3FA0',
 }
 
 @st.cache_resource
@@ -234,4 +220,3 @@ def display_player_cards(df, name_col, stat_col, stat_label, limit=5):
             else:
                 st.metric(stat_label, val)
             st.markdown('</div>', unsafe_allow_html=True)
-
