@@ -78,8 +78,8 @@ bowling = run_query(f"""
     )
     SELECT
         ba.bowler,
-        COALESCE(p.espn_id, p.key_cricinfo) as key_cricinfo,
-        'https://a.espncdn.com/i/headshots/cricket/players/full/' || COALESCE(p.espn_id, p.key_cricinfo) || '.png' as photo_url,
+        CAST(p.key_cricinfo AS VARCHAR) as key_cricinfo,
+        'https://a.espncdn.com/i/headshots/cricket/players/full/' || CAST(p.key_cricinfo AS VARCHAR) || '.png' as photo_url,
         ba.matches,
         ba.innings,
         CAST(FLOOR(ba.total_balls / 6) AS INTEGER) || '.' || (ba.total_balls % 6) as overs,
@@ -128,14 +128,14 @@ wicket_hauls = run_query(f"""
     )
     SELECT
         bi.bowler,
-        COALESCE(p.espn_id, p.key_cricinfo) as key_cricinfo,
-        'https://a.espncdn.com/i/headshots/cricket/players/full/' || COALESCE(p.espn_id, p.key_cricinfo) || '.png' as photo_url,
+        CAST(p.key_cricinfo AS VARCHAR) as key_cricinfo,
+        'https://a.espncdn.com/i/headshots/cricket/players/full/' || CAST(p.key_cricinfo AS VARCHAR) || '.png' as photo_url,
         SUM(CASE WHEN wickets = 4 THEN 1 ELSE 0 END) as "4W",
         SUM(CASE WHEN wickets >= 5 THEN 1 ELSE 0 END) as "5W",
         SUM(CASE WHEN wickets >= 4 THEN 1 ELSE 0 END) as total_hauls
     FROM bowling_innings bi
     LEFT JOIN people p ON bi.bowler = p.name
-    GROUP BY bi.bowler, p.espn_id, p.key_cricinfo
+    GROUP BY bi.bowler, p.key_cricinfo
     HAVING SUM(CASE WHEN wickets >= 4 THEN 1 ELSE 0 END) > 0
     ORDER BY total_hauls DESC, "5W" DESC
     LIMIT 15
@@ -171,8 +171,8 @@ economy = run_query(f"""
     )
     SELECT
         ba.bowler,
-        COALESCE(p.espn_id, p.key_cricinfo) as key_cricinfo,
-        'https://a.espncdn.com/i/headshots/cricket/players/full/' || COALESCE(p.espn_id, p.key_cricinfo) || '.png' as photo_url,
+        CAST(p.key_cricinfo AS VARCHAR) as key_cricinfo,
+        'https://a.espncdn.com/i/headshots/cricket/players/full/' || CAST(p.key_cricinfo AS VARCHAR) || '.png' as photo_url,
         CAST(FLOOR(ba.total_balls / 6) AS INTEGER) || '.' || (ba.total_balls % 6) as overs,
         ba.total_runs_conceded as runs,
         ROUND(ba.total_runs_conceded * 6.0 / NULLIF(ba.total_balls, 0), 2) as economy
@@ -212,8 +212,8 @@ bowl_avg = run_query(f"""
     )
     SELECT
         ba.bowler,
-        COALESCE(p.espn_id, p.key_cricinfo) as key_cricinfo,
-        'https://a.espncdn.com/i/headshots/cricket/players/full/' || COALESCE(p.espn_id, p.key_cricinfo) || '.png' as photo_url,
+        CAST(p.key_cricinfo AS VARCHAR) as key_cricinfo,
+        'https://a.espncdn.com/i/headshots/cricket/players/full/' || CAST(p.key_cricinfo AS VARCHAR) || '.png' as photo_url,
         ba.total_runs_conceded as runs,
         ba.total_wickets as wickets,
         ROUND(ba.total_runs_conceded * 1.0 / NULLIF(ba.total_wickets, 0), 2) as average
@@ -254,8 +254,8 @@ bowl_sr = run_query(f"""
     )
     SELECT
         ba.bowler,
-        COALESCE(p.espn_id, p.key_cricinfo) as key_cricinfo,
-        'https://a.espncdn.com/i/headshots/cricket/players/full/' || COALESCE(p.espn_id, p.key_cricinfo) || '.png' as photo_url,
+        CAST(p.key_cricinfo AS VARCHAR) as key_cricinfo,
+        'https://a.espncdn.com/i/headshots/cricket/players/full/' || CAST(p.key_cricinfo AS VARCHAR) || '.png' as photo_url,
         ba.total_balls as balls,
         ba.total_wickets as wickets,
         ROUND(ba.total_balls * 1.0 / NULLIF(ba.total_wickets, 0), 2) as strike_rate

@@ -34,15 +34,15 @@ with col2:
 
 if selected_player_t and selected_team_t:
     player_info = run_query(f"""
-        SELECT COALESCE(p.espn_id, p.key_cricinfo) as cricinfo_id
-        FROM people p
-        WHERE p.name = '{selected_player_t}'
+        SELECT CAST(cricinfo_id AS VARCHAR) as cricinfo_id
+        FROM batting_metrics
+        WHERE batter = '{selected_player_t}'
     """)
 
     col1, col2, col3 = st.columns([2, 1, 2])
     with col1:
         cricinfo_id = player_info['cricinfo_id'].iloc[0] if len(player_info) > 0 else None
-        photo_url = f"https://a.espncdn.com/i/headshots/cricket/players/full/{int(cricinfo_id)}.png" if pd.notna(cricinfo_id) else None
+        photo_url = f"https://a.espncdn.com/i/headshots/cricket/players/full/{cricinfo_id}.png" if pd.notna(cricinfo_id) else None
         display_player_image(photo_url, cricinfo_id, size=100)
         st.markdown(f"**{selected_player_t}**")
 

@@ -21,9 +21,9 @@ bowlers = run_query("""
 
 col1, col2 = st.columns(2)
 with col1:
-    player1 = st.selectbox("Select Batter", batters['batter'].tolist())
+    player1 = st.selectbox("Select Batter", batters['batter'].tolist(), key="pvp_batter")
 with col2:
-    player2 = st.selectbox("Select Bowler", bowlers['bowler'].tolist())
+    player2 = st.selectbox("Select Bowler", bowlers['bowler'].tolist(), key="pvp_bowler")
 
 if player1 and player2:
     # Get head-to-head stats
@@ -49,11 +49,10 @@ if player1 and player2:
 
         with col1:
             batter_info = run_query(f"""
-                SELECT b.batter, p.key_cricinfo,
-                       'https://a.espncdn.com/i/headshots/cricket/players/full/' || p.key_cricinfo || '.png' as photo_url
-                FROM batting_metrics b
-                LEFT JOIN people p ON b.batter = p.name
-                WHERE b.batter = '{player1}'
+                SELECT batter, cricinfo_id as key_cricinfo,
+                       'https://a.espncdn.com/i/headshots/cricket/players/full/' || cricinfo_id || '.png' as photo_url
+                FROM batting_metrics
+                WHERE batter = '{player1}'
             """)
             if len(batter_info) > 0:
                 display_player_image(batter_info['photo_url'].iloc[0], batter_info['key_cricinfo'].iloc[0], size=100)
@@ -62,11 +61,10 @@ if player1 and player2:
 
         with col2:
             bowler_info = run_query(f"""
-                SELECT b.bowler, p.key_cricinfo,
-                       'https://a.espncdn.com/i/headshots/cricket/players/full/' || p.key_cricinfo || '.png' as photo_url
-                FROM bowling_metrics b
-                LEFT JOIN people p ON b.bowler = p.name
-                WHERE b.bowler = '{player2}'
+                SELECT bowler, cricinfo_id as key_cricinfo,
+                       'https://a.espncdn.com/i/headshots/cricket/players/full/' || cricinfo_id || '.png' as photo_url
+                FROM bowling_metrics
+                WHERE bowler = '{player2}'
             """)
             if len(bowler_info) > 0:
                 display_player_image(bowler_info['photo_url'].iloc[0], bowler_info['key_cricinfo'].iloc[0], size=100)

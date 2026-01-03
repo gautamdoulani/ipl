@@ -40,15 +40,15 @@ with col2:
 
 if selected_player_v and selected_venue:
     player_info = run_query(f"""
-        SELECT b.cricinfo_id
-        FROM batting_metrics b
-        WHERE b.batter = '{selected_player_v}'
+        SELECT CAST(cricinfo_id AS VARCHAR) as cricinfo_id
+        FROM batting_metrics
+        WHERE batter = '{selected_player_v}'
     """)
 
     col1, col2, col3 = st.columns([2, 1, 2])
     with col1:
         cricinfo_id = player_info['cricinfo_id'].iloc[0] if len(player_info) > 0 else None
-        photo_url = f"https://a.espncdn.com/i/headshots/cricket/players/full/{int(cricinfo_id)}.png" if pd.notna(cricinfo_id) else None
+        photo_url = f"https://a.espncdn.com/i/headshots/cricket/players/full/{cricinfo_id}.png" if pd.notna(cricinfo_id) else None
         st.markdown("<div style='text-align:center;'>", unsafe_allow_html=True)
         display_player_image(photo_url, cricinfo_id, size=100)
         st.markdown(f"<p style='text-align:center; font-weight:bold; margin-top:8px;'>{selected_player_v}</p>", unsafe_allow_html=True)

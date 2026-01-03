@@ -9,8 +9,6 @@ import pandas as pd
 import requests
 import streamlit as st
 
-from config import CONFIG
-
 
 def inject_mobile_styles():
     """Inject CSS for mobile-responsive layouts."""
@@ -108,28 +106,31 @@ def get_responsive_columns(total_items, max_desktop=5, max_tablet=3, max_mobile=
     return min(total_items, max_desktop)
 
 
-# Database connection - use data directory
-DB_PATH = Path(__file__).parent / "data" / CONFIG["db_file"]
-
-# For Streamlit Cloud, copy to tmp if needed (since app directory is read-only)
-if os.environ.get('STREAMLIT_SHARING_MODE') or not os.access(DB_PATH.parent, os.W_OK):
-    import shutil
-    TMP_DB = Path(f"/tmp/{CONFIG['db_file']}")
-    if not TMP_DB.exists() and DB_PATH.exists():
-        shutil.copy(DB_PATH, TMP_DB)
-    DB_PATH = TMP_DB
-
 # Logo directory path
 LOGO_DIR = Path(__file__).parent / "logos"
 PLAYER_PLACEHOLDER = LOGO_DIR / "player_placeholder.png"
 
-# Team colors from config
-TEAM_COLORS = CONFIG["teams"]
+
+def get_db_path():
+    """Get database path dynamically from config."""
+    from config import CONFIG
+    db_path = Path(__file__).parent / "data" / CONFIG["db_file"]
+
+    # For Streamlit Cloud, copy to tmp if needed (since app directory is read-only)
+    if os.environ.get('STREAMLIT_SHARING_MODE') or not os.access(db_path.parent, os.W_OK):
+        import shutil
+        tmp_db = Path(f"/tmp/{CONFIG['db_file']}")
+        if not tmp_db.exists() and db_path.exists():
+            shutil.copy(db_path, tmp_db)
+        db_path = tmp_db
+
+    return db_path
 
 
-@st.cache_resource
 def get_connection():
-    return duckdb.connect(str(DB_PATH), read_only=True)
+    """Get database connection (cached per database file)."""
+    db_path = get_db_path()
+    return duckdb.connect(str(db_path), read_only=True)
 
 
 def run_query(query: str) -> pd.DataFrame:

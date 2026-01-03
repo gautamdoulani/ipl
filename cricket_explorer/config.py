@@ -34,6 +34,8 @@ LEAGUE_CONFIG = {
         "team_replacements": [
             ("Royal Challengers Bangalore", "Royal Challengers Bengaluru"),
             ("Rising Pune Supergiants", "Rising Pune Supergiant"),
+            ("Kings XI Punjab", "Punjab Kings"),
+            ("Delhi Daredevils", "Delhi Capitals"),
         ],
         "thresholds": {
             # Batting Stats page

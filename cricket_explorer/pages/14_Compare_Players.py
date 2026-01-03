@@ -7,14 +7,17 @@ from utils import run_query, display_player_image
 st.title("📊 Compare Players")
 st.caption("Side-by-side comparison of two players' career stats")
 
-# Get list of all players with significant appearances
+# Get list of all players ordered by matches played
 players = run_query("""
-    SELECT DISTINCT name FROM (
-        SELECT batter as name FROM batting_metrics WHERE total_balls >= 100
-        UNION
-        SELECT bowler as name FROM bowling_metrics WHERE total_balls >= 100
+    WITH player_matches AS (
+        SELECT batter as name, matches FROM batting_metrics
+        UNION ALL
+        SELECT bowler as name, matches FROM bowling_metrics
     )
-    ORDER BY name
+    SELECT name, MAX(matches) as matches
+    FROM player_matches
+    GROUP BY name
+    ORDER BY matches DESC
 """)
 
 col1, col2 = st.columns(2)
@@ -30,14 +33,14 @@ if player1 and player2:
             batter as name,
             total_runs,
             total_balls,
-            total_innings,
-            total_dismissals,
+            innings,
+            dismissals,
             total_fours,
             total_sixes,
             fifties,
-            hundreds,
-            ROUND(total_runs * 100.0 / NULLIF(total_balls, 0), 2) as strike_rate,
-            ROUND(total_runs * 1.0 / NULLIF(total_dismissals, 0), 2) as average,
+            centuries as hundreds,
+            strike_rate,
+            batting_average as average,
             highest_score
         FROM batting_metrics
         WHERE batter IN ('{player1}', '{player2}')
@@ -50,24 +53,23 @@ if player1 and player2:
             total_wickets,
             total_balls as balls_bowled,
             total_runs_conceded,
-            total_maidens,
-            ROUND(total_runs_conceded * 6.0 / NULLIF(total_balls, 0), 2) as economy,
-            ROUND(total_balls * 1.0 / NULLIF(total_wickets, 0), 2) as bowling_strike_rate,
-            ROUND(total_runs_conceded * 1.0 / NULLIF(total_wickets, 0), 2) as bowling_average,
-            best_bowling_wickets,
-            best_bowling_runs,
+            total_dot_balls,
+            economy_rate as economy,
+            strike_rate as bowling_strike_rate,
+            bowling_average,
+            best_bowling,
             four_wicket_hauls,
             five_wicket_hauls
         FROM bowling_metrics
         WHERE bowler IN ('{player1}', '{player2}')
     """)
 
-    # Get player images
+    # Get player images from batting_metrics (more reliable match with player names)
     player_info = run_query(f"""
-        SELECT name, key_cricinfo,
-               'https://a.espncdn.com/i/headshots/cricket/players/full/' || key_cricinfo || '.png' as photo_url
-        FROM people
-        WHERE name IN ('{player1}', '{player2}')
+        SELECT batter as name, cricinfo_id as key_cricinfo,
+               'https://a.espncdn.com/i/headshots/cricket/players/full/' || cricinfo_id || '.png' as photo_url
+        FROM batting_metrics
+        WHERE batter IN ('{player1}', '{player2}')
     """)
 
     # Display player cards
@@ -96,7 +98,7 @@ if player1 and player2:
             return default
 
         batting_metrics = [
-            ("Innings", "total_innings"),
+            ("Innings", "innings"),
             ("Runs", "total_runs"),
             ("Balls", "total_balls"),
             ("Average", "average"),
@@ -152,10 +154,9 @@ if player1 and player2:
 
         def format_best_bowling(df):
             if len(df) > 0:
-                w = df['best_bowling_wickets'].iloc[0]
-                r = df['best_bowling_runs'].iloc[0]
-                if w is not None and r is not None:
-                    return f"{int(w)}/{int(r)}"
+                bb = df['best_bowling'].iloc[0]
+                if bb is not None:
+                    return bb
             return "-"
 
         bowling_metrics = [
@@ -165,7 +166,7 @@ if player1 and player2:
             ("Economy", "economy", True),
             ("Bowling Avg", "bowling_average", True),
             ("Bowling SR", "bowling_strike_rate", True),
-            ("Maidens", "total_maidens", False),
+            ("Dot Balls", "total_dot_balls", False),
             ("4W Hauls", "four_wicket_hauls", False),
             ("5W Hauls", "five_wicket_hauls", False),
         ]

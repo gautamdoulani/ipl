@@ -75,8 +75,8 @@ batting = run_query(f"""
     )
     SELECT
         b.batter,
-        COALESCE(p.espn_id, p.key_cricinfo) as key_cricinfo,
-        'https://a.espncdn.com/i/headshots/cricket/players/full/' || COALESCE(p.espn_id, p.key_cricinfo) || '.png' as photo_url,
+        CAST(p.key_cricinfo AS VARCHAR) as key_cricinfo,
+        'https://a.espncdn.com/i/headshots/cricket/players/full/' || CAST(p.key_cricinfo AS VARCHAR) || '.png' as photo_url,
         b.matches,
         b.innings,
         b.total_runs as runs,
@@ -123,8 +123,8 @@ strike_rates = run_query(f"""
     )
     SELECT
         ba.batter,
-        COALESCE(p.espn_id, p.key_cricinfo) as key_cricinfo,
-        'https://a.espncdn.com/i/headshots/cricket/players/full/' || COALESCE(p.espn_id, p.key_cricinfo) || '.png' as photo_url,
+        CAST(p.key_cricinfo AS VARCHAR) as key_cricinfo,
+        'https://a.espncdn.com/i/headshots/cricket/players/full/' || CAST(p.key_cricinfo AS VARCHAR) || '.png' as photo_url,
         ba.total_runs as runs,
         ba.total_balls as balls,
         ROUND(ba.total_runs * 100.0 / NULLIF(ba.total_balls, 0), 2) as strike_rate
@@ -161,8 +161,8 @@ averages = run_query(f"""
     )
     SELECT
         ba.batter,
-        COALESCE(p.espn_id, p.key_cricinfo) as key_cricinfo,
-        'https://a.espncdn.com/i/headshots/cricket/players/full/' || COALESCE(p.espn_id, p.key_cricinfo) || '.png' as photo_url,
+        CAST(p.key_cricinfo AS VARCHAR) as key_cricinfo,
+        'https://a.espncdn.com/i/headshots/cricket/players/full/' || CAST(p.key_cricinfo AS VARCHAR) || '.png' as photo_url,
         ba.total_runs as runs,
         ba.dismissals,
         ROUND(ba.total_runs * 1.0 / NULLIF(ba.dismissals, 0), 2) as average
