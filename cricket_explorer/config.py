@@ -1,9 +1,7 @@
 """League configuration for Cricket Data Explorer."""
 
-import os
-
-# Get league from environment variable, default to IPL
-LEAGUE = os.environ.get("CRICKET_LEAGUE", "ipl").lower()
+# Default league - will be overridden by app entry point
+LEAGUE = "ipl"
 
 # League-specific configurations
 LEAGUE_CONFIG = {
@@ -83,8 +81,15 @@ LEAGUE_CONFIG = {
     },
 }
 
-# Active configuration based on environment
+# Active configuration based on league
 CONFIG = LEAGUE_CONFIG[LEAGUE]
+
+
+def set_league(league: str):
+    """Set the active league configuration. Must be called before importing other modules."""
+    global LEAGUE, CONFIG
+    LEAGUE = league.lower()
+    CONFIG = LEAGUE_CONFIG[LEAGUE]
 
 
 def get_threshold(name: str) -> tuple:
