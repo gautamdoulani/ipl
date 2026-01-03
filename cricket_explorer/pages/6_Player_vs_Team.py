@@ -6,6 +6,25 @@ from config import get_team_replacement_sql
 from utils import run_query, display_team_logo, display_player_image
 
 
+@st.cache_data
+def get_players():
+    return run_query("""
+        SELECT batter FROM batting_metrics
+        WHERE total_runs >= 100
+        ORDER BY matches DESC
+    """)
+
+
+@st.cache_data
+def get_teams():
+    team_sql = get_team_replacement_sql("team")
+    return run_query(f"""
+        SELECT {team_sql} as team
+        FROM team_metrics
+        ORDER BY matches_played DESC
+    """)
+
+
 st.title("⚔️ Player vs Team")
 st.caption("How a player performs against a specific team")
 
@@ -17,19 +36,11 @@ batting_team_sql = get_team_replacement_sql("batting_team")
 col1, col2 = st.columns(2)
 
 with col1:
-    players_t = run_query("""
-        SELECT batter FROM batting_metrics
-        WHERE total_runs >= 100
-        ORDER BY matches DESC
-    """)
+    players_t = get_players()
     selected_player_t = st.selectbox("Select Player", players_t['batter'].tolist())
 
 with col2:
-    teams_t = run_query(f"""
-        SELECT {team_sql} as team
-        FROM team_metrics
-        ORDER BY matches_played DESC
-    """)
+    teams_t = get_teams()
     selected_team_t = st.selectbox("Select Opposition Team", teams_t['team'].tolist())
 
 if selected_player_t and selected_team_t:

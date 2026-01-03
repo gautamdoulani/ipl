@@ -4,21 +4,26 @@ import streamlit as st
 from utils import run_query, display_player_image
 
 
+@st.cache_data
+def get_all_players():
+    return run_query("""
+        WITH player_matches AS (
+            SELECT batter as name, matches FROM batting_metrics
+            UNION ALL
+            SELECT bowler as name, matches FROM bowling_metrics
+        )
+        SELECT name, MAX(matches) as matches
+        FROM player_matches
+        GROUP BY name
+        ORDER BY matches DESC
+    """)
+
+
 st.title("📊 Compare Players")
 st.caption("Side-by-side comparison of two players' career stats")
 
-# Get list of all players ordered by matches played
-players = run_query("""
-    WITH player_matches AS (
-        SELECT batter as name, matches FROM batting_metrics
-        UNION ALL
-        SELECT bowler as name, matches FROM bowling_metrics
-    )
-    SELECT name, MAX(matches) as matches
-    FROM player_matches
-    GROUP BY name
-    ORDER BY matches DESC
-""")
+# Get list of all players ordered by matches played (cached)
+players = get_all_players()
 
 col1, col2 = st.columns(2)
 with col1:

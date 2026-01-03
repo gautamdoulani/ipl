@@ -6,6 +6,17 @@ from config import get_team_replacement_sql
 from utils import run_query, display_team_logo, get_team_logo_path
 
 
+@st.cache_data
+def get_all_teams():
+    team_sql = get_team_replacement_sql("team")
+    return run_query(f"""
+        SELECT {team_sql} as team,
+               matches_played
+        FROM team_metrics
+        ORDER BY matches_played DESC
+    """)
+
+
 st.title("⚔️ Team vs Team")
 
 team_sql = get_team_replacement_sql("team")
@@ -13,13 +24,8 @@ team1_sql = get_team_replacement_sql("team1")
 team2_sql = get_team_replacement_sql("team2")
 winner_sql = get_team_replacement_sql("winner")
 
-# Teams from team_metrics semantic model (normalize names, order by matches played)
-teams = run_query(f"""
-    SELECT {team_sql} as team,
-           matches_played
-    FROM team_metrics
-    ORDER BY matches_played DESC
-""")
+# Teams from team_metrics semantic model (cached)
+teams = get_all_teams()
 
 col1, col2 = st.columns(2)
 with col1:

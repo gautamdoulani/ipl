@@ -4,20 +4,30 @@ import streamlit as st
 from utils import run_query, display_player_image
 
 
+@st.cache_data
+def get_batters():
+    return run_query("""
+        SELECT batter FROM batting_metrics
+        WHERE total_runs >= 100
+        ORDER BY total_balls DESC
+    """)
+
+
+@st.cache_data
+def get_bowlers():
+    return run_query("""
+        SELECT bowler FROM bowling_metrics
+        WHERE total_wickets >= 10
+        ORDER BY total_balls DESC
+    """)
+
+
 st.title("⚔️ Player vs Player")
 st.caption("Batter vs Bowler matchups")
 
-# Get list of batters and bowlers (ordered by balls faced/bowled)
-batters = run_query("""
-    SELECT batter FROM batting_metrics
-    WHERE total_runs >= 100
-    ORDER BY total_balls DESC
-""")
-bowlers = run_query("""
-    SELECT bowler FROM bowling_metrics
-    WHERE total_wickets >= 10
-    ORDER BY total_balls DESC
-""")
+# Get list of batters and bowlers (cached)
+batters = get_batters()
+bowlers = get_bowlers()
 
 col1, col2 = st.columns(2)
 with col1:

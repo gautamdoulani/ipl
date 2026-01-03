@@ -6,6 +6,25 @@ from config import get_team_replacement_sql, apply_team_replacements
 from utils import run_query, display_team_logo
 
 
+@st.cache_data
+def get_seasons():
+    return run_query("SELECT DISTINCT season FROM stg_matches WHERE season IS NOT NULL ORDER BY season DESC")
+
+
+@st.cache_data
+def get_matches_for_season(season):
+    team1_sql = get_team_replacement_sql("team1")
+    team2_sql = get_team_replacement_sql("team2")
+    return run_query(f"""
+        SELECT match_id, match_date,
+               {team1_sql} || ' vs ' || {team2_sql} as match_name,
+               city
+        FROM stg_matches
+        WHERE season = '{season}'
+        ORDER BY match_date DESC
+    """)
+
+
 # Get query params for direct navigation
 match_id_param = st.query_params.get('match_id', '')
 season_param = st.query_params.get('season', '')
@@ -23,8 +42,8 @@ if season_param:
 
 st.title("📊 Match Scorecard")
 
-# Season and match selection from staging model
-seasons = run_query("SELECT DISTINCT season FROM stg_matches WHERE season IS NOT NULL ORDER BY season DESC")
+# Season and match selection from staging model (cached)
+seasons = get_seasons()
 season_list = [str(s) for s in seasons['season'].tolist()]
 
 # Pre-select season if coming from query params
@@ -40,14 +59,7 @@ batting_team_sql = get_team_replacement_sql("batting_team")
 winner_sql = get_team_replacement_sql("winner")
 toss_winner_sql = get_team_replacement_sql("toss_winner")
 
-matches = run_query(f"""
-    SELECT match_id, match_date,
-           {team1_sql} || ' vs ' || {team2_sql} as match_name,
-           city
-    FROM stg_matches
-    WHERE season = '{selected_season}'
-    ORDER BY match_date DESC
-""")
+matches = get_matches_for_season(selected_season)
 
 match_options = dict(zip(matches['match_id'].astype(int), matches['match_name'] + ' (' + matches['match_date'].astype(str) + ')'))
 match_list = list(match_options.keys())
